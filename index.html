@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -414,7 +415,7 @@
         </div>
 
         <div class="product-card">
-            <div class="product-image" data-image="images/stapel.png" data-model="models/stapel.stp">
+            <div class="product-image" data-image="images/stapel.png" data-model="models/stapel.stl">
                 <img src="images/stapel.png" alt="Стапель сварочный" onerror="this.style.display='none'; this.parentNode.innerHTML='<div style=\'font-size:3em;\'>🔩</div><div class=\'format-badge\'>STL</div><div class=\'model-indicator\'>3D просмотр</div>';">
                 <div class="format-badge">STL</div>
                 <div class="model-indicator">3D просмотр</div>
@@ -731,4 +732,739 @@
         };
     </script>
 </body>
+=======
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Магазин чертежей и 3D моделей</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    <link rel="icon" type="image/png" href="images/favicon.png">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+
+    <!-- Three.js для кастомного 3D просмотрщика -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+        
+        .header .price-badge {
+            display: inline-block;
+            background: #FFD700;
+            color: #333;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.3em;
+            margin: 10px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .product-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            text-align: center;
+            will-change: transform;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+        }
+        
+        .product-image {
+            width: 100%;
+            height: 200px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            overflow: hidden;
+            position: relative;
+            border: 2px solid #e9ecef;
+        }
+        
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        
+        .product-image:hover img {
+            transform: scale(1.05);
+        }
+        
+        .product-image .model-indicator {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+        
+        .product-image .format-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #667eea;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+        }
+        
+        .product-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .product-description {
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+        
+        .product-features {
+            list-style: none;
+            margin-bottom: 20px;
+            text-align: left;
+            font-size: 0.9em;
+        }
+        
+        .product-features li {
+            padding: 4px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .product-features li:before {
+            content: "✅ ";
+            margin-right: 8px;
+            font-size: 0.8em;
+        }
+        
+        .formats-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin: 10px 0;
+            justify-content: center;
+        }
+        
+        .format-tag {
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8em;
+            color: #495057;
+        }
+        
+        .buy-button {
+            display: block;
+            width: 100%;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            text-decoration: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1em;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .buy-button:hover {
+            background: linear-gradient(45deg, #45a049, #4CAF50);
+            transform: scale(1.02);
+        }
+        
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+        
+        .guarantee {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .guarantee-item {
+            background: rgba(255,255,255,0.9);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            min-width: 140px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .modal-content {
+            width: 100%;
+            max-width: 900px;
+            height: 80vh;
+            position: relative;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .modal-header {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-body {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .modal-body img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: transform 0.3s ease;
+            user-select: none;
+        }
+        
+        .image-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+        
+        .image-controls button {
+            background: rgba(255,255,255,0.9);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .zoom-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            display: none;
+        }
+        
+        #modelContainer {
+            width: 100%;
+            height: 100%;
+            background: #1a1a1a;
+        }
+        
+        .close-modal {
+            color: #666;
+            font-size: 24px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 5px;
+        }
+        
+        .model-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+        
+        .model-controls button {
+            background: rgba(255,255,255,0.9);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: white;
+            font-size: 18px;
+        }
+        
+        @media (max-width: 768px) {
+            .products-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .modal-content {
+                height: 60vh;
+            }
+            
+            .guarantee-item {
+                min-width: 120px;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div style="background: #ff6b35; color: white; padding: 10px; text-align: center; font-weight: bold; position: fixed; top: 0; left: 0; right: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+        🚧 Сайт находится в разработке. Некоторые функции могут быть недоступны. 🚧
+    </div>
+
+    <div class="header" style="margin-top: 50px;">
+        <h1>
+            <img src="images/logo.png" alt="FIXCAD MARKET" style="height: 72px; vertical-align: middle;">
+            FIXCAD MARKET — чертежи и 3D-модели Компас<sup style="font-size: 0.5em;">®</sup>
+        </h1>
+        <div class="price-badge">ВСЕ товары по 100 рублей!</div>
+        <p>Качественные файлы для конструкторов и проектировщиков</p>
+    </div>
+
+    <div class="guarantee">
+        <div class="guarantee-item">
+            <div style="font-size: 1.8em;">⚡</div>
+            <div>Мгновенная доставка</div>
+        </div>
+        <div class="guarantee-item">
+            <div style="font-size: 1.8em;">🛡️</div>
+            <div>Гарантия качества</div>
+        </div>
+        <div class="guarantee-item">
+            <div style="font-size: 1.8em;">💬</div>
+            <div>Поддержка 24/7</div>
+        </div>
+    </div>
+
+    <div class="products-grid">
+        <div class="product-card">
+            <div class="product-image" data-image="images/stend.png" data-model="models/stend.stl">
+                <img src="images/stend.png" alt="Стенд для пакеров" onerror="this.style.display='none'; this.parentNode.innerHTML='<div style=\'font-size:3em;\'>📐</div><div class=\'format-badge\'>STL</div><div class=\'model-indicator\'>3D просмотр</div>';">
+                <div class="format-badge">STL</div>
+                <div class="model-indicator">3D просмотр</div>
+            </div>
+            <div class="product-title">Стенд для пакеров</div>
+            <div class="product-description">Полный комплект чертежей и 3D модель</div>
+            <div class="formats-list">
+                <span class="format-tag">CDW</span>
+                <span class="format-tag">SPW</span>
+                <span class="format-tag">A3D</span>
+                <span class="format-tag">M3D</span>
+            </div>
+            <ul class="product-features">
+                <li>Чертежи КОМПАС</li>
+                <li>3D модели КОМПАС</li>
+                <li>Спецификации</li>
+                <li>Паспорт, РЭ</li>
+            </ul>
+            <a class="buy-button" href="https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=stend&targets=%D0%A1%D1%82%D0%B5%D0%BD%D0%B4%20%D0%B4%D0%BB%D1%8F%20%D0%BF%D0%B0%D0%BA%D0%B5%D1%80%D0%BE%D0%B2&successURL=success.html">
+                Купить за 100 руб.
+            </a>
+        </div>
+
+        <div class="product-card">
+            <div class="product-image" data-image="images/stapel.png" data-model="models/stapel.stl">
+                <img src="images/stapel.png" alt="Стапель сварочный" onerror="this.style.display='none'; this.parentNode.innerHTML='<div style=\'font-size:3em;\'>🔩</div><div class=\'format-badge\'>STL</div><div class=\'model-indicator\'>3D просмотр</div>';">
+                <div class="format-badge">STL</div>
+                <div class="model-indicator">3D просмотр</div>
+            </div>
+            <div class="product-title">Стапель сварочный 3х12 м</div>
+            <div class="product-description">Комплект чертежей + 3D модель</div>
+            <div class="formats-list">
+                <span class="format-tag">CDW</span>
+                <span class="format-tag">SPW</span>
+                <span class="format-tag">A3D</span>
+                <span class="format-tag">M3D</span>
+            </div>
+            <ul class="product-features">
+                <li>Чертежи КОМПАС</li>
+                <li>3D модели КОМПАС</li>
+                <li>Спецификации</li>
+            </ul>
+            <a class="buy-button" href="https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=stapel&targets=%D0%A1%D1%82%D0%B0%D0%BF%D0%B5%D0%BB%D1%8C%20%D1%81%D0%B2%D0%B0%D1%80%D0%BE%D1%87%D0%BD%D1%8B%D0%B9&successURL=success.html">
+                Купить за 100 руб.
+            </a>
+        </div>
+
+        <div class="product-card">
+            <div class="product-image" data-image="images/level.png">
+                <img src="images/level.png" alt="Уровнемер механический" onerror="this.style.display='none'; this.parentNode.innerHTML='<div style=\'font-size:3em;\'>📏</div><div class=\'format-badge\'>CDW</div><div class=\'model-indicator\'>Изображение</div>';">
+                <div class="format-badge">CDW</div>
+                <div class="model-indicator">Изображение</div>
+            </div>
+            <div class="product-title">Уровнемер механический</div>
+            <div class="product-description">Для любого емкостного без давления</div>
+            <div class="formats-list">
+                <span class="format-tag">CDW</span>
+            </div>
+            <ul class="product-features">
+                <li>Сборочный чертеж</li>
+                <li>Спецификация</li>
+                <li>Таблица сварных соединений</li>
+                <li>Технические требования</li>
+            </ul>
+            <a class="buy-button" href="https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=level&targets=%D0%A3%D1%80%D0%BE%D0%B2%D0%BD%D0%B5%D0%BC%D0%B5%D1%80%20%D0%BC%D0%B5%D1%85%D0%B0%D0%BD%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9&successURL=success.html">
+                Купить за 100 руб.
+            </a>
+        </div>
+    </div>
+
+    <div class="modal" id="imageModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin:0;">Просмотр изображения</h3>
+                <button class="close-modal" id="closeImageModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <img id="modalImage" src="" alt="">
+                <div class="zoom-info" id="zoomInfo">100%</div>
+                <div class="image-controls">
+                    <button onclick="zoomIn()">+ Увеличить</button>
+                    <button onclick="zoomOut()">- Уменьшить</button>
+                    <button onclick="resetZoom()">Сброс</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modelModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin:0;color:#333;">3D просмотр модели</h3>
+                <button class="close-modal" id="closeModelModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="modelContainer">
+                    <div class="loading">Загрузка 3D модели...</div>
+                </div>
+                <div class="model-controls">
+                    <button onclick="rotateModel()">Вращать</button>
+                    <button onclick="resetModel()">Сброс</button>
+                    <button onclick="toggleWireframe()">Каркас</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p><strong>Форматы из КОМПАС-3D:</strong> CDW, PDF, DXF, STEP, IGES, STL</p>
+        <p>Связь и вопросы: 
+            <a href="mailto:irashitov79@mail.ru" style="color: #FFD700; font-weight: bold;">irashitov79@mail.ru</a>
+        </p>
+        <p style="margin-top: 10px; font-size: 0.9em;">
+            После оплаты файлы высылаются на email в течение 5 минут
+        </p>
+    </div>
+
+    <script>
+        let scene, camera, renderer, controls, currentModel;
+        let isRotating = false;
+        let rotationSpeed = 0.01;
+        let threeJSInitialized = false;
+        let animationId = null;
+
+        let currentScale = 1;
+        let translateX = 0;
+        let translateY = 0;
+        let startX, startY, initialTranslateX, initialTranslateY;
+        let isDragging = false;
+        const ZOOM_SPEED = 0.2;
+        const MIN_ZOOM = 0.5;
+        const MAX_ZOOM = 5;
+
+        function updateZoomInfo() {
+            const zoomInfo = document.getElementById('zoomInfo');
+            zoomInfo.textContent = Math.round(currentScale * 100) + '%';
+            zoomInfo.style.display = 'block';
+            setTimeout(() => zoomInfo.style.display = 'none', 2000);
+        }
+
+        function zoomIn() {
+            if (currentScale < MAX_ZOOM) {
+                currentScale += ZOOM_SPEED;
+                applyTransform();
+                updateZoomInfo();
+            }
+        }
+
+        function zoomOut() {
+            if (currentScale > MIN_ZOOM) {
+                currentScale -= ZOOM_SPEED;
+                applyTransform();
+                updateZoomInfo();
+            }
+        }
+
+        function resetZoom() {
+            currentScale = 1;
+            translateX = 0;
+            translateY = 0;
+            applyTransform();
+            updateZoomInfo();
+        }
+
+        function applyTransform() {
+            const img = document.getElementById('modalImage');
+            img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale})`;
+        }
+
+        function setupImageDrag() {
+            const modalBody = document.getElementById('imageModal').querySelector('.modal-body');
+            const img = document.getElementById('modalImage');
+
+            modalBody.onmousedown = function(e) {
+                if (currentScale > 1) {
+                    isDragging = true;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    initialTranslateX = translateX;
+                    initialTranslateY = translateY;
+                    modalBody.style.cursor = 'grabbing';
+                }
+            };
+
+            modalBody.onmousemove = function(e) {
+                if (!isDragging) return;
+                translateX = initialTranslateX + (e.clientX - startX);
+                translateY = initialTranslateY + (e.clientY - startY);
+                applyTransform();
+            };
+
+            modalBody.onmouseup = modalBody.onmouseleave = function() {
+                isDragging = false;
+                modalBody.style.cursor = 'default';
+            };
+
+            modalBody.onwheel = function(e) {
+                e.preventDefault();
+                e.deltaY < 0 ? zoomIn() : zoomOut();
+            };
+        }
+
+        function initThreeJS() {
+            if (threeJSInitialized) return;
+            
+            const container = document.getElementById('modelContainer');
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a1a);
+            
+            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.z = 5;
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            
+            container.innerHTML = '';
+            container.appendChild(renderer.domElement);
+            
+            scene.add(new THREE.AmbientLight(0x404040, 0.6));
+            const light = new THREE.DirectionalLight(0xffffff, 0.8);
+            light.position.set(1, 1, 1);
+            scene.add(light);
+            
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            
+            scene.add(new THREE.GridHelper(10, 10));
+            
+            threeJSInitialized = true;
+        }
+
+        function animate() {
+            animationId = requestAnimationFrame(animate);
+            
+            if (isRotating && currentModel) {
+                currentModel.rotation.y += rotationSpeed;
+            }
+            
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        function stopAnimation() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            isRotating = false;
+        }
+
+        function loadSTLModel(url) {
+            const loader = new THREE.STLLoader();
+            const container = document.getElementById('modelContainer');
+            
+            container.innerHTML = '<div class="loading">Загрузка модели...</div>';
+            
+            loader.load(url, function(geometry) {
+                container.innerHTML = '';
+                container.appendChild(renderer.domElement);
+                
+                if (currentModel) scene.remove(currentModel);
+                
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: 0x667eea,
+                    specular: 0x111111,
+                    shininess: 200
+                });
+                
+                currentModel = new THREE.Mesh(geometry, material);
+                
+                geometry.computeBoundingBox();
+                const center = geometry.boundingBox.getCenter(new THREE.Vector3());
+                geometry.translate(-center.x, -center.y, -center.z);
+                
+                const scale = 2 / geometry.boundingBox.getSize(new THREE.Vector3()).length();
+                currentModel.scale.multiplyScalar(scale);
+                
+                scene.add(currentModel);
+                camera.position.set(0, 0, 5);
+                controls.update();
+                
+                animate();
+            });
+        }
+
+        function rotateModel() {
+            isRotating = !isRotating;
+        }
+
+        function resetModel() {
+            if (currentModel) currentModel.rotation.set(0, 0, 0);
+            controls.reset();
+        }
+
+        function toggleWireframe() {
+            if (currentModel) currentModel.material.wireframe = !currentModel.material.wireframe;
+        }
+
+        document.querySelectorAll('.product-image').forEach(image => {
+            image.onclick = function() {
+                const imageSrc = this.getAttribute('data-image');
+                const modelSrc = this.getAttribute('data-model');
+                
+                if (modelSrc) {
+                    document.getElementById('modelModal').style.display = 'flex';
+                    initThreeJS();
+                    setTimeout(() => loadSTLModel(modelSrc), 100);
+                } else {
+                    document.getElementById('modalImage').src = imageSrc;
+                    document.getElementById('imageModal').style.display = 'flex';
+                    resetZoom();
+                    setupImageDrag();
+                }
+            };
+        });
+
+        document.getElementById('closeImageModal').onclick = function() {
+            document.getElementById('imageModal').style.display = 'none';
+            resetZoom();
+        };
+
+        document.getElementById('closeModelModal').onclick = function() {
+            document.getElementById('modelModal').style.display = 'none';
+            stopAnimation();
+        };
+
+        document.getElementById('imageModal').onclick = function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+                resetZoom();
+            }
+        };
+
+        document.getElementById('modelModal').onclick = function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+                stopAnimation();
+            }
+        };
+    </script>
+</body>
+>>>>>>> c85206ef4fe590bf8813535de4d26f3d78c94052
 </html>
