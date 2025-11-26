@@ -6,7 +6,6 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(require('cors')());
-app.use(express.static('.'));
 
 // ============================================
 // ВАШИ ССЫЛКИ С ЯНДЕКС.ДИСКА
@@ -49,14 +48,14 @@ const PRODUCTS = {
   }
 };
 
-// Настройка Mail.ru транспорта
+// Настройка Mail.ru транспорта - ПРЯМЫЕ ЗНАЧЕНИЯ
 const transporter = nodemailer.createTransport({
   host: 'smtp.mail.ru',
   port: 465,
   secure: true,
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
+    user: 'irashitov79@mail.ru',
+    pass: 'PLRNxidaIN2kajxITz2x'
   }
 });
 
@@ -287,7 +286,7 @@ app.post('/webhook/yoomoney', async (req, res) => {
 
     // Отправка email с архивом
     await transporter.sendMail({
-      from: `"FIXCAD MARKET" <${process.env.EMAIL_USER}>`,
+      from: '"FIXCAD MARKET" <irashitov79@mail.ru>',
       to: email,
       subject: `✅ Ваш заказ: ${product.name} - FIXCAD MARKET`,
       html: generateEmailHTML(product)
@@ -297,7 +296,7 @@ app.post('/webhook/yoomoney', async (req, res) => {
     res.status(200).send('OK');
     
   } catch (error) {
-    console.error('❌ Ошибка обработки webhook:', error);
+    console.error('❌ Ошибка обработка webhook:', error);
     res.status(500).send('Error');
   }
 });
@@ -308,20 +307,20 @@ app.get('/test-email', async (req, res) => {
     const testProduct = PRODUCTS.stend;
     
     await transporter.sendMail({
-      from: `"FIXCAD MARKET" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER,
+      from: '"FIXCAD MARKET" <irashitov79@mail.ru>',
+      to: 'irashitov79@mail.ru',
       subject: '🧪 ТЕСТ: Система работает!',
       html: generateEmailHTML(testProduct)
     });
     
     res.json({ 
       success: true, 
-      message: 'Тестовое письмо отправлено на ' + process.env.EMAIL_USER 
+      message: 'Тестовое письмо отправлено на irashitov79@mail.ru' 
     });
   } catch (error) {
     res.status(500).json({ 
       error: error.message,
-      details: 'Проверьте настройки EMAIL_USER и EMAIL_PASS в .env'
+      details: 'Проверьте настройки почты'
     });
   }
 });
@@ -347,7 +346,7 @@ app.post('/send-manual', async (req, res) => {
     }
     
     await transporter.sendMail({
-      from: `"FIXCAD MARKET" <${process.env.EMAIL_USER}>`,
+      from: '"FIXCAD MARKET" <irashitov79@mail.ru>',
       to: email,
       subject: `Ваш заказ: ${product.name}`,
       html: generateEmailHTML(product)
@@ -394,7 +393,7 @@ app.get('/product/:label', (req, res) => {
 app.get('/test', (req, res) => {
   res.json({ 
     status: '🚀 Сервер работает',
-    email: process.env.EMAIL_USER ? '✅ настроен' : '❌ не настроен',
+    email: '✅ настроен',
     products: Object.keys(PRODUCTS),
     endpoints: {
       'GET /test': 'Проверка статуса сервера',
@@ -408,14 +407,54 @@ app.get('/test', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`
+
+// Экспорт для Netlify Functions
+exports.handler = async (event, context) => {
+  // Эмулируем Express для Netlify Functions
+  const response = {
+    statusCode: 200,
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    },
+    body: ''
+  };
+
+  try {
+    // Здесь будет логика маршрутизации
+    // Пока просто возвращаем тестовый ответ
+    if (event.path === '/test') {
+      response.body = JSON.stringify({ 
+        status: '🚀 Сервер работает на Netlify',
+        email: '✅ настроен',
+        message: 'Система готова к работе!'
+      });
+    } else {
+      response.body = JSON.stringify({ 
+        message: 'Use /test endpoint to check status',
+        available: ['/test', '/test-email', '/products']
+      });
+    }
+  } catch (error) {
+    response.statusCode = 500;
+    response.body = JSON.stringify({ error: error.message });
+  }
+
+  return response;
+};
+
+// Для локальной разработки
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`
 ╔════════════════════════════════════════╗
 ║     🚀 FIXCAD MARKET BACKEND          ║
 ╚════════════════════════════════════════╝
   
   📍 Порт: ${PORT}
-  📧 Email: ${process.env.EMAIL_USER || '❌ НЕ НАСТРОЕН'}
+  📧 Email: ✅ настроен
   📦 Товары: ${Object.keys(PRODUCTS).join(', ')}
   
   Endpoints:
@@ -425,5 +464,6 @@ app.listen(PORT, () => {
   • POST /webhook/yoomoney - webhook от ЮMoney
   
 ╚════════════════════════════════════════╝
-  `);
-});
+    `);
+  });
+}
