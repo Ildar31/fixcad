@@ -722,7 +722,6 @@
     </div>
 
     <script>
-        // Базы URL для оплаты с email для отправки
         // Конфигурация GitHub Actions
         const GITHUB_CONFIG = {
             owner: 'ildar31', // ваш username GitHub
@@ -862,111 +861,6 @@
         });
 
         // Остальной JavaScript код для 3D просмотрщика и модальных окон
-
-        const productNames = {
-            stend: 'Стенд для пакеров',
-            stapel: 'Стапель сварочный 3х12 м', 
-            level: 'Уровнемер механический'
-        };
-
-        let currentProduct = null;
-
-        // Единая функция для показа формы
-        function showPurchaseForm(productId) {
-            currentProduct = productId;
-            const productName = productNames[productId];
-            
-            document.getElementById('modal-product-name').textContent = productName;
-            document.getElementById('modal-email-input').value = '';
-            document.getElementById('modal-name-input').value = '';
-            document.getElementById('purchaseModal').style.display = 'flex';
-        }
-
-        // Функция для обработки покупки
-        function processPurchase() {
-            if (!currentProduct) return false;
-
-            const email = document.getElementById('modal-email-input').value.trim();
-            const name = document.getElementById('modal-name-input').value.trim();
-
-            // Валидация email
-            if (!email) {
-                alert('Пожалуйста, введите email для отправки ссылки');
-                return false;
-            }
-
-            if (!isValidEmail(email)) {
-                alert('Пожалуйста, введите корректный email адрес');
-                return false;
-            }
-
-            // Формируем URL для оплаты с данными пользователя
-            const baseUrl = paymentUrls[currentProduct];
-            let paymentUrl = baseUrl;
-            
-            // Добавляем параметры
-            if (baseUrl.includes('?')) {
-                paymentUrl += '&';
-            } else {
-                paymentUrl += '?';
-            }
-            
-            paymentUrl += `customer_email=${encodeURIComponent(email)}`;
-            if (name) {
-                paymentUrl += `&customer_name=${encodeURIComponent(name)}`;
-            }
-
-            // Закрываем модалку и переходим к оплате
-            document.getElementById('purchaseModal').style.display = 'none';
-            window.location.href = paymentUrl;
-            return true;
-        }
-
-        function isValidEmail(email) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return emailRegex.test(email);
-        }
-
-        // Инициализация обработчиков событий
-        document.addEventListener('DOMContentLoaded', function() {
-            // Обработчики для кнопок "Купить"
-            document.querySelectorAll('.buy-button').forEach(button => {
-                button.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const productId = this.getAttribute('data-product');
-                    showPurchaseForm(productId);
-                });
-            });
-
-            // Обработчик для подтверждения покупки в модалке
-            document.getElementById('modal-confirm-purchase').addEventListener('click', processPurchase);
-
-            // Обработчик для отмены в модалке
-            document.getElementById('modal-cancel-purchase').addEventListener('click', function() {
-                document.getElementById('purchaseModal').style.display = 'none';
-            });
-
-            // Обработчик для закрытия модалки
-            document.getElementById('closePurchaseModal').addEventListener('click', function() {
-                document.getElementById('purchaseModal').style.display = 'none';
-            });
-
-            // Закрытие модалки по клику вне ее
-            document.getElementById('purchaseModal').addEventListener('click', function(e) {
-                if (e.target === this) {
-                    this.style.display = 'none';
-                }
-            });
-
-            // Обработчик для Enter в форме
-            document.getElementById('purchaseModal').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    processPurchase();
-                }
-            });
-        });
-
-        // Остальной JavaScript код для 3D просмотра и модальных окон
         let scene, camera, renderer, controls, currentModel;
         let isRotating = false;
         let rotationSpeed = 0.01;
