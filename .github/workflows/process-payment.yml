@@ -1,1 +1,59 @@
+name: Process Payment and Send Files
 
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+    inputs:
+      product_id:
+        description: 'Product ID'
+        required: true
+      customer_email:
+        description: 'Customer Email'
+        required: true
+      customer_name:
+        description: 'Customer Name'
+        required: false
+
+jobs:
+  process-payment:
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.body, 'AUTOMATION_TRIGGER') || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests pyyaml
+        
+    - name: Process payment and send email
+      env:
+        EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+      run: |
+        if [ "${{ github.event_name }}" = "issues" ]; then
+          echo "Processing order from issue..."
+          python .github/scripts/process_from_issue.py
+        else
+          echo "Processing manual order..."
+          python .github/scripts/process_payment.py
+        fi
+        
+    - name: Close issue after processing
+      if: github.event_name == 'issues'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.update({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.payload.issue.number,
+            state: 'closed'
+          })
