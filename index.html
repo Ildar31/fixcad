@@ -65,6 +65,9 @@
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             text-align: center;
             will-change: transform;
+            display: flex;
+            flex-direction: column;
+            height: fit-content;
         }
         
         .product-card:hover {
@@ -85,6 +88,7 @@
             overflow: hidden;
             position: relative;
             border: 2px solid #e9ecef;
+            flex-shrink: 0;
         }
         
         .product-image img {
@@ -125,12 +129,14 @@
             font-weight: bold;
             margin-bottom: 10px;
             color: #2c3e50;
+            flex-shrink: 0;
         }
         
         .product-description {
             color: #666;
             margin-bottom: 15px;
             font-size: 0.9em;
+            flex-shrink: 0;
         }
         
         .product-features {
@@ -138,6 +144,7 @@
             margin-bottom: 20px;
             text-align: left;
             font-size: 0.9em;
+            flex-grow: 1;
         }
         
         .product-features li {
@@ -157,6 +164,7 @@
             gap: 5px;
             margin: 10px 0;
             justify-content: center;
+            flex-shrink: 0;
         }
         
         .format-tag {
@@ -182,6 +190,7 @@
             border: none;
             cursor: pointer;
             margin-top: 10px;
+            flex-shrink: 0;
         }
         
         .buy-button:hover {
@@ -336,6 +345,91 @@
             color: white;
             font-size: 18px;
         }
+
+        /* Стили для формы ввода данных */
+        .user-data-form {
+            display: none;
+            margin: 15px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            flex-shrink: 0;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 0.9em;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-required {
+            color: #e74c3c;
+        }
+
+        .confirm-purchase {
+            width: 100%;
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .confirm-purchase:hover {
+            background: linear-gradient(45deg, #1976D2, #1565C0);
+            transform: scale(1.02);
+        }
+
+        .form-note {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .cancel-purchase {
+            width: 100%;
+            background: #95a5a6;
+            color: white;
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            margin-top: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.3s ease;
+        }
+
+        .cancel-purchase:hover {
+            background: #7f8c8d;
+        }
         
         @media (max-width: 768px) {
             .products-grid {
@@ -354,6 +448,11 @@
                 min-width: 120px;
                 padding: 10px;
             }
+
+            .user-data-form {
+                padding: 15px;
+                margin: 10px 0;
+            }
         }
     </style>
 </head>
@@ -368,7 +467,7 @@
             <img src="images/logo.png" alt="FIXCAD MARKET" style="height: 72px; vertical-align: middle;">
             FIXCAD MARKET — чертежи и 3D-модели Компас<sup style="font-size: 0.5em;">®</sup>
         </h1>
-        <div class="price-badge">ВСЕ товары по 100 рублей!</div>
+        <div class="price-badge">ВСЕ позиции по 100 рублей!</div>
         <p>Качественные файлы для конструкторов и проектировщиков</p>
     </div>
 
@@ -408,7 +507,33 @@
                 <li>Спецификации</li>
                 <li>Паспорт, РЭ</li>
             </ul>
-            <a class="buy-button" href="https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=stend&targets=%D0%A1%D1%82%D0%B5%D0%BD%D0%B4%20%D0%B4%D0%BB%D1%8F%20%D0%BF%D0%B0%D0%BA%D0%B5%D1%80%D0%BE%D0%B2&successURL=success.html">
+
+            <!-- Форма для ввода данных пользователя -->
+            <div class="user-data-form" id="form-stend">
+                <div class="form-group">
+                    <label class="form-label">
+                        Email для отправки ссылки <span class="form-required">*</span>
+                    </label>
+                    <input type="email" class="form-input email-input" 
+                           placeholder="your@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Имя (необязательно):</label>
+                    <input type="text" class="form-input name-input" 
+                           placeholder="Ваше имя">
+                </div>
+                <button class="confirm-purchase" data-product="stend">
+                    Подтвердить и перейти к оплате
+                </button>
+                <button class="cancel-purchase" data-product="stend">
+                    Отмена
+                </button>
+                <div class="form-note">
+                    После оплаты файлы будут отправлены на указанный email в течение 5 минут
+                </div>
+            </div>
+
+            <a class="buy-button" href="#" data-product="stend">
                 Купить за 100 руб.
             </a>
         </div>
@@ -432,7 +557,33 @@
                 <li>3D модели КОМПАС</li>
                 <li>Спецификации</li>
             </ul>
-            <a class="buy-button" href="https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=stapel&targets=%D0%A1%D1%82%D0%B0%D0%BF%D0%B5%D0%BB%D1%8C%20%D1%81%D0%B2%D0%B0%D1%80%D0%BE%D1%87%D0%BD%D1%8B%D0%B9&successURL=success.html">
+
+            <!-- Форма для ввода данных пользователя -->
+            <div class="user-data-form" id="form-stapel">
+                <div class="form-group">
+                    <label class="form-label">
+                        Email для отправки ссылки <span class="form-required">*</span>
+                    </label>
+                    <input type="email" class="form-input email-input" 
+                           placeholder="your@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Имя (необязательно):</label>
+                    <input type="text" class="form-input name-input" 
+                           placeholder="Ваше имя">
+                </div>
+                <button class="confirm-purchase" data-product="stapel">
+                    Подтвердить и перейти к оплате
+                </button>
+                <button class="cancel-purchase" data-product="stapel">
+                    Отмена
+                </button>
+                <div class="form-note">
+                    После оплаты файлы будут отправлены на указанный email в течение 5 минут
+                </div>
+            </div>
+
+            <a class="buy-button" href="#" data-product="stapel">
                 Купить за 100 руб.
             </a>
         </div>
@@ -454,9 +605,72 @@
                 <li>Таблица сварных соединений</li>
                 <li>Технические требования</li>
             </ul>
-            <a class="buy-button" href="https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=level&targets=%D0%A3%D1%80%D0%BE%D0%B2%D0%BD%D0%B5%D0%BC%D0%B5%D1%80%20%D0%BC%D0%B5%D1%85%D0%B0%D0%BD%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9&successURL=success.html">
+
+            <!-- Форма для ввода данных пользователя -->
+            <div class="user-data-form" id="form-level">
+                <div class="form-group">
+                    <label class="form-label">
+                        Email для отправки ссылки <span class="form-required">*</span>
+                    </label>
+                    <input type="email" class="form-input email-input" 
+                           placeholder="your@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Имя (необязательно):</label>
+                    <input type="text" class="form-input name-input" 
+                           placeholder="Ваше имя">
+                </div>
+                <button class="confirm-purchase" data-product="level">
+                    Подтвердить и перейти к оплате
+                </button>
+                <button class="cancel-purchase" data-product="level">
+                    Отмена
+                </button>
+                <div class="form-note">
+                    После оплаты файлы будут отправлены на указанный email в течение 5 минут
+                </div>
+            </div>
+
+            <a class="buy-button" href="#" data-product="level">
                 Купить за 100 руб.
             </a>
+        </div>
+    </div>
+
+    <!-- Единая модалка для формы -->
+    <div class="modal" id="purchaseModal">
+        <div class="modal-content" style="max-width: 500px; height: auto;">
+            <div class="modal-header">
+                <h3 style="margin:0;">Введите данные для получения ссылки</h3>
+                <button class="close-modal" id="closePurchaseModal">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <div class="form-group">
+                    <label class="form-label">
+                        Email для отправки ссылки <span class="form-required">*</span>
+                    </label>
+                    <input type="email" class="form-input" id="modal-email-input" 
+                           placeholder="your@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Имя (необязательно):</label>
+                    <input type="text" class="form-input" id="modal-name-input" 
+                           placeholder="Ваше имя">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Позиция:</label>
+                    <div id="modal-product-name" style="font-weight: bold; padding: 8px; background: #f8f9fa; border-radius: 4px;"></div>
+                </div>
+                <button class="confirm-purchase" id="modal-confirm-purchase" style="margin-top: 20px;">
+                    Подтвердить и перейти к оплате
+                </button>
+                <button class="cancel-purchase" id="modal-cancel-purchase" style="margin-top: 10px;">
+                    Отмена
+                </button>
+                <div class="form-note" style="margin-top: 15px;">
+                    После оплаты файлы будут отправлены на указанный email в течение 5 минут
+                </div>
+            </div>
         </div>
     </div>
 
@@ -508,6 +722,251 @@
     </div>
 
     <script>
+        // Базы URL для оплаты с email для отправки
+        // Конфигурация GitHub Actions
+        const GITHUB_CONFIG = {
+            owner: 'ildar31', // ваш username GitHub
+            repo: 'fixcad', // название вашего репозитория
+        };
+
+        const productNames = {
+            stend: 'Стенд для пакеров',
+            stapel: 'Стапель сварочный 3х12 м', 
+            level: 'Уровнемер механический'
+        };
+
+        let currentProduct = null;
+
+        // Безопасная функция отправки заказа
+        async function triggerGitHubAction(productId, email, name) {
+            // Создаем issue в GitHub вместо прямого API вызова
+            const issueTitle = `🛒 Новый заказ: ${productId}`;
+            const issueBody = `
+## Данные заказа:
+- **Товар:** ${productId}
+- **Email:** ${email}
+- **Имя:** ${name || 'Не указано'}
+- **Время:** ${new Date().toLocaleString()}
+
+<!-- AUTOMATION_TRIGGER -->
+<!-- Не удаляйте эту строку - она запускает автоматизацию -->
+            `;
+            
+            // Открываем форму создания issue
+            const url = `https://github.com/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/issues/new?title=${encodeURIComponent(issueTitle)}&body=${encodeURIComponent(issueBody)}`;
+            window.open(url, '_blank');
+            
+            return { success: true };
+        }
+
+        // Единая функция для показа формы
+        function showPurchaseForm(productId) {
+            currentProduct = productId;
+            const productName = productNames[productId];
+            
+            document.getElementById('modal-product-name').textContent = productName;
+            document.getElementById('modal-email-input').value = '';
+            document.getElementById('modal-name-input').value = '';
+            document.getElementById('purchaseModal').style.display = 'flex';
+        }
+
+        // Обновленная функция обработки покупки
+        async function processPurchase() {
+            if (!currentProduct) return false;
+
+            const email = document.getElementById('modal-email-input').value.trim();
+            const name = document.getElementById('modal-name-input').value.trim();
+
+            if (!email) {
+                alert('Пожалуйста, введите email для отправки ссылки');
+                return false;
+            }
+
+            if (!isValidEmail(email)) {
+                alert('Пожалуйста, введите корректный email адрес');
+                return false;
+            }
+
+            try {
+                // Показываем загрузку
+                const confirmBtn = document.getElementById('modal-confirm-purchase');
+                confirmBtn.textContent = 'Отправка...';
+                confirmBtn.disabled = true;
+
+                // Запускаем автоматизацию
+                await triggerGitHubAction(currentProduct, email, name);
+                
+                // Успех!
+                alert('✅ Заказ принят! Ссылки для скачивания будут отправлены на ваш email в течение 2-3 минут.\n\nПроверьте папку "Спам", если не найдете письмо.');
+                
+                // Закрываем модалку
+                document.getElementById('purchaseModal').style.display = 'none';
+                
+                // Очищаем форму
+                document.getElementById('modal-email-input').value = '';
+                document.getElementById('modal-name-input').value = '';
+                
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('❌ Произошла ошибка при обработке заказа. Пожалуйста, напишите нам на irashitov79@mail.ru');
+            } finally {
+                // Восстанавливаем кнопку
+                const confirmBtn = document.getElementById('modal-confirm-purchase');
+                confirmBtn.textContent = 'Подтвердить и получить ссылки';
+                confirmBtn.disabled = false;
+            }
+        }
+
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        // Инициализация обработчиков событий
+        document.addEventListener('DOMContentLoaded', function() {
+            // Обработчики для кнопок "Купить"
+            document.querySelectorAll('.buy-button').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const productId = this.getAttribute('data-product');
+                    showPurchaseForm(productId);
+                });
+            });
+
+            // Обработчик для подтверждения покупки в модалке
+            document.getElementById('modal-confirm-purchase').addEventListener('click', processPurchase);
+
+            // Обработчик для отмены в модалке
+            document.getElementById('modal-cancel-purchase').addEventListener('click', function() {
+                document.getElementById('purchaseModal').style.display = 'none';
+            });
+
+            // Обработчик для закрытия модалки
+            document.getElementById('closePurchaseModal').addEventListener('click', function() {
+                document.getElementById('purchaseModal').style.display = 'none';
+            });
+
+            // Закрытие модалки по клику вне ее
+            document.getElementById('purchaseModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.style.display = 'none';
+                }
+            });
+
+            // Обработчик для Enter в форме
+            document.getElementById('purchaseModal').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    processPurchase();
+                }
+            });
+        });
+
+        // Остальной JavaScript код для 3D просмотрщика и модальных окон
+
+        const productNames = {
+            stend: 'Стенд для пакеров',
+            stapel: 'Стапель сварочный 3х12 м', 
+            level: 'Уровнемер механический'
+        };
+
+        let currentProduct = null;
+
+        // Единая функция для показа формы
+        function showPurchaseForm(productId) {
+            currentProduct = productId;
+            const productName = productNames[productId];
+            
+            document.getElementById('modal-product-name').textContent = productName;
+            document.getElementById('modal-email-input').value = '';
+            document.getElementById('modal-name-input').value = '';
+            document.getElementById('purchaseModal').style.display = 'flex';
+        }
+
+        // Функция для обработки покупки
+        function processPurchase() {
+            if (!currentProduct) return false;
+
+            const email = document.getElementById('modal-email-input').value.trim();
+            const name = document.getElementById('modal-name-input').value.trim();
+
+            // Валидация email
+            if (!email) {
+                alert('Пожалуйста, введите email для отправки ссылки');
+                return false;
+            }
+
+            if (!isValidEmail(email)) {
+                alert('Пожалуйста, введите корректный email адрес');
+                return false;
+            }
+
+            // Формируем URL для оплаты с данными пользователя
+            const baseUrl = paymentUrls[currentProduct];
+            let paymentUrl = baseUrl;
+            
+            // Добавляем параметры
+            if (baseUrl.includes('?')) {
+                paymentUrl += '&';
+            } else {
+                paymentUrl += '?';
+            }
+            
+            paymentUrl += `customer_email=${encodeURIComponent(email)}`;
+            if (name) {
+                paymentUrl += `&customer_name=${encodeURIComponent(name)}`;
+            }
+
+            // Закрываем модалку и переходим к оплате
+            document.getElementById('purchaseModal').style.display = 'none';
+            window.location.href = paymentUrl;
+            return true;
+        }
+
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        // Инициализация обработчиков событий
+        document.addEventListener('DOMContentLoaded', function() {
+            // Обработчики для кнопок "Купить"
+            document.querySelectorAll('.buy-button').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const productId = this.getAttribute('data-product');
+                    showPurchaseForm(productId);
+                });
+            });
+
+            // Обработчик для подтверждения покупки в модалке
+            document.getElementById('modal-confirm-purchase').addEventListener('click', processPurchase);
+
+            // Обработчик для отмены в модалке
+            document.getElementById('modal-cancel-purchase').addEventListener('click', function() {
+                document.getElementById('purchaseModal').style.display = 'none';
+            });
+
+            // Обработчик для закрытия модалки
+            document.getElementById('closePurchaseModal').addEventListener('click', function() {
+                document.getElementById('purchaseModal').style.display = 'none';
+            });
+
+            // Закрытие модалки по клику вне ее
+            document.getElementById('purchaseModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.style.display = 'none';
+                }
+            });
+
+            // Обработчик для Enter в форме
+            document.getElementById('purchaseModal').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    processPurchase();
+                }
+            });
+        });
+
+        // Остальной JavaScript код для 3D просмотра и модальных окон
         let scene, camera, renderer, controls, currentModel;
         let isRotating = false;
         let rotationSpeed = 0.01;
@@ -731,3 +1190,4 @@
         };
     </script>
 </body>
+</html>
