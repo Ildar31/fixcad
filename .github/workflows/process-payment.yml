@@ -1,24 +1,15 @@
 name: Process Payment and Send Files
 
 on:
+  repository_dispatch:
+    types: [process_payment]
   issues:
     types: [opened]
-  workflow_dispatch:
-    inputs:
-      product_id:
-        description: 'Product ID'
-        required: true
-      customer_email:
-        description: 'Customer Email'
-        required: true
-      customer_name:
-        description: 'Customer Name'
-        required: false
 
 jobs:
   process-payment:
     runs-on: ubuntu-latest
-    if: contains(github.event.issue.body, 'AUTOMATION_TRIGGER') || github.event_name == 'workflow_dispatch'
+    if: contains(github.event.issue.body, 'AUTOMATION_TRIGGER') || github.event_name == 'repository_dispatch'
     
     steps:
     - name: Checkout repository
@@ -37,16 +28,9 @@ jobs:
     - name: Process payment and send email
       env:
         EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-      run: |
-        if [ "${{ github.event_name }}" = "issues" ]; then
-          echo "Processing order from issue..."
-          python .github/scripts/process_from_issue.py
-        else
-          echo "Processing manual order..."
-          python .github/scripts/process_payment.py
-        fi
-        
-    - name: Close issue after processing
+      run: python .github/scripts/process_payment.py
+      
+    - name: Close issue if created
       if: github.event_name == 'issues'
       uses: actions/github-script@v6
       with:
