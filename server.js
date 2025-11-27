@@ -53,7 +53,7 @@ const PRODUCTS = {
 const transporter = nodemailer.createTransport({
   host: 'smtp.mail.ru',
   port: 2525,
-  secure: true,
+  secure: false,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
@@ -591,6 +591,7 @@ app.listen(PORT, () => {
   `);
 
 });
+
 
 
 
