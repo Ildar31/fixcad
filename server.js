@@ -254,129 +254,12 @@ function generateEmailHTML(product) {
   `;
 }
 
-// Endpoint для обработки заказов (без отправки ссылки покупателю)
-app.post('/api/order', async (req, res) => {
-  try {
-    const { product, name, email, phone, comment } = req.body;
-    
-    console.log('📦 Получен новый заказ:', { product, name, email });
-    
-    if (!product || !name || !email) {
-      return res.status(400).json({ 
-        error: 'Необходимо указать product, name и email' 
-      });
-    }
-
-    const productInfo = PRODUCTS[product];
-    if (!productInfo) {
-      return res.status(404).json({ 
-        error: 'Товар не найден',
-        available: Object.keys(PRODUCTS)
-      });
-    }
-
-    // Отправляем уведомление вам на почту о новом заказе
-    const orderHTML = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
-          .content { background: #f8f9fa; padding: 20px; border-radius: 0 0 10px 10px; }
-          .order-details { background: white; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #667eea; }
-          .customer-info { background: white; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #28a745; }
-          .payment-info { background: #fff3cd; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #ffc107; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>🛒 Новый заказ FIXCAD MARKET</h1>
-            <p>Ожидает оплаты</p>
-          </div>
-          <div class="content">
-            <div class="order-details">
-              <h3>📦 Информация о заказе</h3>
-              <p><strong>Товар:</strong> ${productInfo.name}</p>
-              <p><strong>Архив:</strong> ${productInfo.zipName}</p>
-              <p><strong>Цена:</strong> 100 руб.</p>
-              <p><strong>Время:</strong> ${new Date().toLocaleString('ru-RU')}</p>
-            </div>
-            
-            <div class="customer-info">
-              <h3>👤 Данные покупателя</h3>
-              <p><strong>ФИО:</strong> ${name}</p>
-              <p><strong>Email:</strong> ${email}</p>
-              <p><strong>Телефон:</strong> ${phone || 'Не указан'}</p>
-              <p><strong>Комментарий:</strong> ${comment || 'Нет комментария'}</p>
-            </div>
-
-            <div class="payment-info">
-              <h3>💳 Статус оплаты</h3>
-              <p><strong>⚠️ ОЖИДАЕТ ОПЛАТЫ</strong></p>
-              <p>Ссылка для скачивания будет отправлена автоматически после подтверждения оплаты через ЮMoney.</p>
-            </div>
-            
-            <div style="text-align: center; margin-top: 20px;">
-              <p><strong>Ссылка для скачивания (после оплаты):</strong></p>
-              <a href="${productInfo.zipUrl}" style="color: #667eea; word-break: break-all;">${productInfo.zipUrl}</a>
-            </div>
-          </div>
-        </div>
-      </body>
-      </html>
-    `;
-
-    // Отправляем письмо только вам (администратору)
-    await transporter.sendMail({
-      from: `"FIXCAD MARKET - Заказы" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER, // Письмо приходит только вам
-      subject: `🛒 Новый заказ (ожидает оплаты): ${productInfo.name}`,
-      html: orderHTML
-    });
-
-    console.log(`✅ Уведомление о новом заказе отправлено вам на ${process.env.EMAIL_USER}`);
-
-    res.json({ 
-      success: true, 
-      message: 'Данные заказа отправлены. Переход к оплате...',
-      orderId: Date.now()
-    });
-    
-  } catch (error) {
-    console.error('❌ Ошибка обработки заказа:', error);
-    res.status(500).json({ 
-      error: 'Ошибка сервера при обработке заказа',
-      details: error.message 
-    });
-  }
-});
-
-// Webhook от ЮMoney - обрабатывает платежи и отправляет ссылку покупателю
+// Webhook от ЮMoney - обрабатывает платежи
 app.post('/webhook/yoomoney', async (req, res) => {
   try {
     const { label, withdraw_amount, notification_type, email } = req.body;
     
-    console.log('📨 Получен webhook от ЮMoney:', { 
-      label, 
-      email, 
-      amount: withdraw_amount,
-      notification_type,
-      fullBody: req.body
-    });
-    
-    // Обработка тестового уведомления от ЮMoney
-    if (!label || label === '' || label === 'test') {
-      console.log('✅ Тестовое уведомление от ЮMoney получено успешно');
-      return res.status(200).json({ 
-        status: 'OK', 
-        message: 'Webhook работает корректно',
-        received: req.body
-      });
-    }
+    console.log('📨 Получен webhook:', { label, email, amount: withdraw_amount });
     
     // Проверка типа уведомления
     if (notification_type !== 'p2p-incoming') {
@@ -402,49 +285,15 @@ app.post('/webhook/yoomoney', async (req, res) => {
       return res.status(200).send('OK');
     }
 
-    // ОТПРАВЛЯЕМ письмо со ссылкой для скачивания покупателю
+    // Отправка email с архивом
     await transporter.sendMail({
       from: `"FIXCAD MARKET" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: `✅ Оплата получена! Ваш заказ: ${product.name} - FIXCAD MARKET`,
+      subject: `✅ Ваш заказ: ${product.name} - FIXCAD MARKET`,
       html: generateEmailHTML(product)
     });
 
-    // Также отправляем уведомление вам о successful payment
-    await transporter.sendMail({
-      from: `"FIXCAD MARKET - Платежи" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER,
-      subject: `💳 Оплата получена: ${product.name}`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head><meta charset="UTF-8"></head>
-        <body>
-          <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
-            <div style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
-              <h1>💳 Оплата получена!</h1>
-            </div>
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 0 0 10px 10px;">
-              <div style="background: white; padding: 15px; margin: 15px 0; border-radius: 8px;">
-                <h3>✅ Платеж подтвержден</h3>
-                <p><strong>Товар:</strong> ${product.name}</p>
-                <p><strong>Покупатель:</strong> ${email}</p>
-                <p><strong>Сумма:</strong> ${withdraw_amount} руб.</p>
-                <p><strong>Время:</strong> ${new Date().toLocaleString('ru-RU')}</p>
-              </div>
-              <p style="text-align: center; color: #666;">
-                Ссылка для скачивания отправлена покупателю автоматически.
-              </p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `
-    });
-
-    console.log(`✅ Письмо со ссылкой отправлено покупателю на ${email}`);
-    console.log(`✅ Уведомление об оплате отправлено вам`);
-
+    console.log(`✅ Email успешно отправлен на ${email} для товара ${label}`);
     res.status(200).send('OK');
     
   } catch (error) {
@@ -562,7 +411,6 @@ app.get('/test', (req, res) => {
       'GET /test-email': 'Отправка тестового письма себе',
       'GET /products': 'Список всех товаров',
       'GET /product/:label': 'Информация о товаре',
-      'POST /api/order': 'НОВЫЙ: Оформление заказа',
       'POST /webhook/yoomoney': 'Webhook от ЮMoney',
       'POST /send-manual': 'Ручная отправка (email, productLabel)'
     }
@@ -584,16 +432,9 @@ app.listen(PORT, () => {
   • GET  /test         - проверка статуса
   • GET  /test-email   - тест отправки
   • GET  /products     - список товаров
-  • POST /api/order    - оформление заказа
   • POST /webhook/yoomoney - webhook от ЮMoney
   
 ╚════════════════════════════════════════╝
   `);
 
 });
-
-
-
-
-
-
