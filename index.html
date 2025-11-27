@@ -903,9 +903,15 @@
                     messageDiv.innerHTML = '✅ Данные отправлены! Открываем страницу оплаты...';
                     messageDiv.style.display = 'block';
                     
-                    // Открываем оплату в новой вкладке и закрываем форму
+                    // Открываем оплату в НОВОМ ОКНЕ и закрываем форму
                     setTimeout(() => {
-                        window.open(PRODUCT_URLS[currentProduct], '_blank');
+                        const paymentWindow = window.open(PRODUCT_URLS[currentProduct], 'yoomoney_payment', 'width=1000,height=700,left=100,top=100');
+                        
+                        // Фокусируем новое окно
+                        if (paymentWindow) {
+                            paymentWindow.focus();
+                        }
+                        
                         document.getElementById('orderModal').style.display = 'none';
                     }, 1000);
                     
