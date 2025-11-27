@@ -305,8 +305,14 @@ app.post('/webhook/yoomoney', async (req, res) => {
 // Тестовый endpoint - отправит письмо вам на почту
 app.get('/test-email', async (req, res) => {
   try {
+    console.log('🔍 Начинаем тест отправки email...');
+    console.log('📧 Email from:', process.env.EMAIL_USER);
+    console.log('🔑 Password exists:', !!process.env.EMAIL_PASS);
+    console.log('🔑 Password length:', process.env.EMAIL_PASS?.length || 0);
+    
     const testProduct = PRODUCTS.stend;
     
+    console.log('📤 Отправляем письмо...');
     await transporter.sendMail({
       from: `"FIXCAD MARKET" <${process.env.EMAIL_USER}>`,
       to: process.env.EMAIL_USER,
@@ -314,14 +320,18 @@ app.get('/test-email', async (req, res) => {
       html: generateEmailHTML(testProduct)
     });
     
+    console.log('✅ Письмо успешно отправлено!');
     res.json({ 
       success: true, 
       message: 'Тестовое письмо отправлено на ' + process.env.EMAIL_USER 
     });
   } catch (error) {
+    console.error('❌ ОШИБКА:', error.message);
+    console.error('❌ Полная ошибка:', error);
     res.status(500).json({ 
       error: error.message,
-      details: 'Проверьте настройки EMAIL_USER и EMAIL_PASS в .env'
+      code: error.code,
+      details: 'Проверьте настройки EMAIL_USER и EMAIL_PASS'
     });
   }
 });
@@ -426,4 +436,5 @@ app.listen(PORT, () => {
   
 ╚════════════════════════════════════════╝
   `);
+
 });
