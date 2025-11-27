@@ -47,29 +47,6 @@ const PRODUCTS = {
       'Технические требования'
     ]
   },
-  level_1: {
-    name: 'Уровнемер механический (копия 1)',
-    description: 'Для любого емкостного без давления',
-    zipUrl: 'https://disk.yandex.ru/d/79sH_E3uDXdNgw/download',
-    zipName: 'level.zip',
-    contents: [
-      'Сборочный чертеж',
-      'Спецификация',
-      'Таблица сварных соединений',
-      'Технические требования'
-    ]
-  },
-  stapel_1: {
-    name: 'Стапель сварочный 3х12 м (копия 1)',
-    description: 'Комплект чертежей + 3D модель',
-    zipUrl: 'https://disk.yandex.ru/d/Nv7iD6T5JYrKVQ/download',
-    zipName: 'stapel.zip',
-    contents: [
-      'Чертежи КОМПАС',
-      '3D модели КОМПАС',
-      'Спецификации'
-    ]
-  },
 };
 
 // Настройка Mail.ru транспорта
