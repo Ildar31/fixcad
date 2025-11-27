@@ -903,14 +903,24 @@
                     messageDiv.innerHTML = '✅ Данные отправлены! Открываем страницу оплаты...';
                     messageDiv.style.display = 'block';
                     
-                    // Открываем оплату в НОВОМ ОКНЕ и закрываем форму
+                    // Открываем оплату в НОВОМ ОКНЕ с полным разрывом связи
                     setTimeout(() => {
-                        const paymentWindow = window.open(PRODUCT_URLS[currentProduct], 'yoomoney_payment', 'width=1000,height=700,left=100,top=100');
+                        // Создаем временную ссылку
+                        const tempLink = document.createElement('a');
+                        tempLink.href = PRODUCT_URLS[currentProduct];
+                        tempLink.target = '_blank';
+                        tempLink.rel = 'noopener noreferrer'; // Важно!
                         
-                        // Фокусируем новое окно
-                        if (paymentWindow) {
-                            paymentWindow.focus();
-                        }
+                        // Программно кликаем по ссылке
+                        const clickEvent = new MouseEvent('click', {
+                            view: window,
+                            bubbles: true,
+                            cancelable: true
+                        });
+                        tempLink.dispatchEvent(clickEvent);
+                        
+                        document.getElementById('orderModal').style.display = 'none';
+                    }, 1000);
                         
                         document.getElementById('orderModal').style.display = 'none';
                     }, 1000);
