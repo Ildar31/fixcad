@@ -52,7 +52,7 @@ const PRODUCTS = {
 // Настройка Mail.ru транспорта
 const transporter = nodemailer.createTransport({
   host: 'smtp.mail.ru',
-  port: 465,
+  port: 2025,
   secure: true,
   auth: {
     user: process.env.EMAIL_USER,
@@ -591,5 +591,6 @@ app.listen(PORT, () => {
   `);
 
 });
+
 
 
