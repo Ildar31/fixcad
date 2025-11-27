@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin/
 Disallow: /private/
 
-Sitemap: https://fixcad-market.ru/sitemap.xml
+Sitemap: https://fixcad.ru/sitemap.xml
