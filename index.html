@@ -664,6 +664,11 @@
                         <div class="warning-box">
                             <h4>⚠️ Внимание!</h4>
                             <p>Ссылка для скачивания будет отправлена на указанный email после оплаты. Проверьте правильность ввода email!</p>
+                            <p style="margin-top: 8px; font-size: 12px;">
+                                <strong>Если окно оплаты не открылось автоматически:</strong><br>
+                                • Разрешите всплывающие окна для этого сайта<br>
+                                • Или нажмите на ссылку, которая появится после отправки формы
+                            </p>
                         </div>
 
                         <div class="form-group">
@@ -903,18 +908,33 @@
                     messageDiv.innerHTML = '✅ Данные отправлены! Открываем страницу оплаты...';
                     messageDiv.style.display = 'block';
                     
-                    // Открываем оплату в новой вкладке с полным разрывом связи
+                    // Открываем оплату с обработкой блокировки всплывающих окон
                     setTimeout(() => {
-                        // АЛЬТЕРНАТИВНОЕ РЕШЕНИЕ - полный разрыв связи
-                        const tempLink = document.createElement('a');
-                        tempLink.href = PRODUCT_URLS[currentProduct];
-                        tempLink.target = '_blank';
-                        tempLink.rel = 'noopener noreferrer'; // Критически важно для безопасности
-                        document.body.appendChild(tempLink);
-                        tempLink.click();
-                        document.body.removeChild(tempLink);
+                        const paymentUrl = PRODUCT_URLS[currentProduct];
                         
-                        document.getElementById('orderModal').style.display = 'none';
+                        // Пытаемся открыть в новом окне
+                        const newWindow = window.open(paymentUrl, '_blank', 'noopener,noreferrer');
+                        
+                        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+                            // Если всплывающее окно заблокировано - показываем инструкцию
+                            messageDiv.className = 'form-message error';
+                            messageDiv.innerHTML = `
+                                ❌ Браузер заблокировал открытие окна оплаты.<br>
+                                <strong>Нажмите на ссылку ниже для перехода к оплате:</strong><br>
+                                <a href="${paymentUrl}" target="_blank" rel="noopener noreferrer" 
+                                   style="color: #FFD700; font-weight: bold; text-decoration: underline;">
+                                    🔗 Перейти к оплате на ЮMoney
+                                </a>
+                                <br><br>
+                                <small>После оплаты закройте вкладку ЮMoney и вернитесь на этот сайт</small>
+                            `;
+                            messageDiv.style.display = 'block';
+                            
+                            // Не закрываем модальное окно, чтобы пользователь видел ссылку
+                        } else {
+                            // Если окно открылось успешно - закрываем модальное окно
+                            document.getElementById('orderModal').style.display = 'none';
+                        }
                     }, 1000);
                     
                 } else {
