@@ -542,7 +542,7 @@ class ProductManager:
         self.contents_text.delete("1.0", tk.END)
         self.contents_text.insert("1.0", '\n'.join(product_data['contents']))
 
-     def clear_form(self):
+    def clear_form(self):
         """Очищает форму"""
         self.product_id_var.set("")
         self.name_var.set("")
