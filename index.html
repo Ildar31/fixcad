@@ -895,18 +895,15 @@ const PRODUCT_URLS = {
                 const result = await response.json();
                 
                 if (response.ok) {
-                    // Если данные успешно отправлены, переходим к оплате
+                    // Если данные успешно отправлены, открываем оплату в новой вкладке
                     messageDiv.className = 'form-message success';
-                    messageDiv.innerHTML = '✅ Данные отправлены! Переход к оплате...';
+                    messageDiv.innerHTML = '✅ Данные отправлены! Открываем страницу оплаты...';
                     messageDiv.style.display = 'block';
                     
-                    // Открываем оплату в новой вкладке
+                    // Открываем оплату в новой вкладке и закрываем форму
                     setTimeout(() => {
                         window.open(PRODUCT_URLS[currentProduct], '_blank');
-                        // Закрываем модальное окно формы
                         document.getElementById('orderModal').style.display = 'none';
-                        // Показываем сообщение пользователю
-                        messageDiv.innerHTML = '✅ Данные отправлены! Открываем страницу оплаты...';
                     }, 1000);
                     
                 } else {
