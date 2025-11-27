@@ -59,6 +59,17 @@ const PRODUCTS = {
       'Технические требования'
     ]
   },
+  stapel_1: {
+    name: 'Стапель сварочный 3х12 м (копия 1)',
+    description: 'Комплект чертежей + 3D модель',
+    zipUrl: 'https://disk.yandex.ru/d/Nv7iD6T5JYrKVQ/download',
+    zipName: 'stapel.zip',
+    contents: [
+      'Чертежи КОМПАС',
+      '3D модели КОМПАС',
+      'Спецификации'
+    ]
+  },
 };
 
 // Настройка Mail.ru транспорта
