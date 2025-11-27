@@ -18,10 +18,10 @@ const PRODUCTS = {
     zipUrl: 'https://disk.yandex.ru/d/yavUz8k9ce2gAw/download',
     zipName: 'stend.zip',
     contents: [
-      'Чертежи КОМПАС (CDW)',
-      '3D модели КОМПАС (A3D, M3D)',
-      'Спецификации (SPW)',
-      'Паспорт, РЭ (PDF)'
+      'Чертежи КОМПАС',
+      '3D модели КОМПАС',
+      'Спецификации',
+      'Паспорт, РЭ'
     ]
   },
   stapel: {
@@ -30,9 +30,9 @@ const PRODUCTS = {
     zipUrl: 'https://disk.yandex.ru/d/Nv7iD6T5JYrKVQ/download',
     zipName: 'stapel.zip',
     contents: [
-      'Чертежи КОМПАС (CDW)',
-      '3D модели КОМПАС (A3D, M3D)',
-      'Спецификации (SPW)'
+      'Чертежи КОМПАС',
+      '3D модели КОМПАС',
+      'Спецификации'
     ]
   },
   level: {
@@ -41,8 +41,8 @@ const PRODUCTS = {
     zipUrl: 'https://disk.yandex.ru/d/79sH_E3uDXdNgw/download',
     zipName: 'level.zip',
     contents: [
-      'Сборочный чертеж (CDW)',
-      'Спецификация (PDF)',
+      'Сборочный чертеж',
+      'Спецификация',
       'Таблица сварных соединений',
       'Технические требования'
     ]
@@ -405,70 +405,142 @@ app.post('/webhook/yoomoney', async (req, res) => {
       return res.status(200).send('OK');
     }
 
-    // Валидация email
+    // Валидация email - ОСЛАБЛЕННАЯ проверка (всегда отправляем, но с предупреждением)
     function isValidEmail(email) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
     }
-
-    if (!customerEmail || !isValidEmail(customerEmail)) {
-        console.error('❌ Неверный или отсутствующий email:', customerEmail);
-        // Отправляем уведомление вам для ручной проверки
-        await transporter.sendMail({
-            from: `"FIXCAD MARKET - Проблема" <${process.env.EMAIL_USER}>`,
-            to: process.env.EMAIL_USER,
-            subject: `❌ Проблема с email в заказе: ${productInfo.name}`,
-            html: `
-                <p>Получен платеж, но с email покупателя проблема.</p>
-                <p><strong>Товар:</strong> ${productInfo.name}</p>
-                <p><strong>Email:</strong> ${customerEmail || 'не указан'}</p>
-                <p><strong>Сумма:</strong> ${withdraw_amount} руб.</p>
-                <p><strong>Label:</strong> ${label}</p>
-                <p><strong>Ссылка для ручной отправки:</strong> ${productInfo.zipUrl}</p>
-                <p><strong>Время:</strong> ${new Date().toLocaleString('ru-RU')}</p>
-                <p style="color: red; font-weight: bold;">ВНИМАНИЕ: Покупатель не получил файл автоматически!</p>
-                <p>Свяжитесь с покупателем для отправки файла вручную.</p>
-            `
-        });
-        return res.status(200).send('OK');
+    
+    function isSuspiciousEmail(email) {
+        // Подозрительные email - проходят базовую валидацию, но домен непопулярный
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) return false;
+        
+        // Проверяем популярные домены
+        const popularDomains = [
+            'gmail.com', 'yandex.ru', 'mail.ru', 'rambler.ru', 'yahoo.com',
+            'outlook.com', 'hotmail.com', 'icloud.com', 'protonmail.com'
+        ];
+        
+        const domain = email.split('@')[1];
+        const hasPopularDomain = popularDomains.some(popular => 
+            domain === popular || domain.endsWith('.' + popular)
+        );
+        
+        return !hasPopularDomain;
     }
 
-    // ОТПРАВЛЯЕМ письмо со ссылкой для скачивания покупателю
-    await transporter.sendMail({
-      from: `"FIXCAD MARKET" <${process.env.EMAIL_USER}>`,
-      to: customerEmail,
-      subject: `✅ Оплата получена! Ваш заказ: ${productInfo.name} - FIXCAD MARKET`,
-      html: generateEmailHTML(productInfo)
-    });
+    let emailStatus = 'valid';
+    if (!customerEmail) {
+        emailStatus = 'missing';
+    } else if (!isValidEmail(customerEmail)) {
+        emailStatus = 'invalid';
+    } else if (isSuspiciousEmail(customerEmail)) {
+        emailStatus = 'suspicious';
+    }
 
-    // Также отправляем уведомление вам
+    // ОТПРАВЛЯЕМ письмо со ссылкой для скачивания покупателю В ЛЮБОМ СЛУЧАЕ
+    if (customerEmail && isValidEmail(customerEmail)) {
+        try {
+            await transporter.sendMail({
+                from: `"FIXCAD MARKET" <${process.env.EMAIL_USER}>`,
+                to: customerEmail,
+                subject: `✅ Оплата получена! Ваш заказ: ${productInfo.name} - FIXCAD MARKET`,
+                html: generateEmailHTML(productInfo)
+            });
+            console.log(`✅ Письмо со ссылкой отправлено покупателю на ${customerEmail}`);
+        } catch (emailError) {
+            console.error('❌ Ошибка отправки письма покупателю:', emailError.message);
+            emailStatus = 'sending_failed';
+        }
+    }
+
+    // Всегда отправляем уведомление о получении платежа
+    let adminSubject = `💳 Оплата получена: ${productInfo.name}`;
+    let warningHtml = '';
+    
+    if (emailStatus !== 'valid') {
+        if (emailStatus === 'suspicious') {
+            adminSubject = `⚠️ Подозрительный email: ${productInfo.name}`;
+            warningHtml = `
+                <div style="background: #fff3cd; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #ffc107;">
+                    <h4 style="color: #856404; margin-top: 0;">⚠️ Внимание!</h4>
+                    <p style="color: #856404; margin: 0;">
+                        Email покупателя прошел базовую проверку, но домен непопулярный. 
+                        Письмо отправлено, но рекомендуется проверить доставку.
+                    </p>
+                </div>
+            `;
+        } else if (emailStatus === 'invalid') {
+            adminSubject = `❌ Неверный email: ${productInfo.name}`;
+            warningHtml = `
+                <div style="background: #f8d7da; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #dc3545;">
+                    <h4 style="color: #721c24; margin-top: 0;">❌ Критическая проблема!</h4>
+                    <p style="color: #721c24; margin: 0;">
+                        Email покупателя неверный. Письмо НЕ отправлено!
+                        Свяжитесь с покупателем для отправки файла вручную.
+                    </p>
+                </div>
+            `;
+        } else if (emailStatus === 'missing') {
+            adminSubject = `❌ Отсутствует email: ${productInfo.name}`;
+            warningHtml = `
+                <div style="background: #f8d7da; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #dc3545;">
+                    <h4 style="color: #721c24; margin-top: 0;">❌ Критическая проблема!</h4>
+                    <p style="color: #721c24; margin: 0;">
+                        Email покупателя отсутствует. Письмо НЕ отправлено!
+                        Свяжитесь с покупателем для отправки файла вручную.
+                    </p>
+                </div>
+            `;
+        } else if (emailStatus === 'sending_failed') {
+            adminSubject = `❌ Ошибка отправки: ${productInfo.name}`;
+            warningHtml = `
+                <div style="background: #f8d7da; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #dc3545;">
+                    <h4 style="color: #721c24; margin-top: 0;">❌ Ошибка отправки!</h4>
+                    <p style="color: #721c24; margin: 0;">
+                        Не удалось отправить письмо покупателю. 
+                        Свяжитесь с покупателем для отправки файла вручную.
+                    </p>
+                </div>
+            `;
+        }
+    }
+
     await transporter.sendMail({
-      from: `"FIXCAD MARKET - Платежи" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER,
-      subject: `💳 Оплата получена: ${productInfo.name}`,
-      html: `
-        <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
-          <div style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
-            <h1>💳 Оплата получена!</h1>
-          </div>
-          <div style="background: #f8f9fa; padding: 20px; border-radius: 0 0 10px 10px;">
-            <div style="background: white; padding: 15px; margin: 15px 0; border-radius: 8px;">
-              <h3>✅ Платеж подтвержден</h3>
-              <p><strong>Товар:</strong> ${productInfo.name}</p>
-              <p><strong>Покупатель:</strong> ${customerEmail}</p>
-              <p><strong>Сумма:</strong> ${withdraw_amount} руб.</p>
-              <p><strong>Тип платежа:</strong> ${notification_type}</p>
-              <p><strong>Время:</strong> ${new Date().toLocaleString('ru-RU')}</p>
+        from: `"FIXCAD MARKET - Платежи" <${process.env.EMAIL_USER}>`,
+        to: process.env.EMAIL_USER,
+        subject: adminSubject,
+        html: `
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+                <div style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+                    <h1>💳 Оплата получена!</h1>
+                </div>
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 0 0 10px 10px;">
+                    <div style="background: white; padding: 15px; margin: 15px 0; border-radius: 8px;">
+                        <h3>✅ Платеж подтвержден</h3>
+                        <p><strong>Товар:</strong> ${productInfo.name}</p>
+                        <p><strong>Покупатель:</strong> ${customerEmail || 'не указан'}</p>
+                        <p><strong>Статус email:</strong> ${emailStatus === 'valid' ? '✅ Валидный' : emailStatus === 'suspicious' ? '⚠️ Подозрительный' : '❌ Проблемный'}</p>
+                        <p><strong>Сумма:</strong> ${withdraw_amount} руб.</p>
+                        <p><strong>Тип платежа:</strong> ${notification_type}</p>
+                        <p><strong>Время:</strong> ${new Date().toLocaleString('ru-RU')}</p>
+                    </div>
+                    ${warningHtml}
+                    ${emailStatus === 'valid' ? `
+                    <p style="text-align: center; color: #666;">
+                        Ссылка для скачивания отправлена покупателю автоматически.
+                    </p>
+                    ` : ''}
+                    <div style="background: #e7f3ff; padding: 15px; margin: 15px 0; border-radius: 8px;">
+                        <p style="margin: 0; color: #0066cc;"><strong>Ссылка для скачивания:</strong></p>
+                        <p style="margin: 5px 0 0 0;"><a href="${productInfo.zipUrl}" style="color: #667eea; word-break: break-all;">${productInfo.zipUrl}</a></p>
+                    </div>
+                </div>
             </div>
-            <p style="text-align: center; color: #666;">
-              Ссылка для скачивания отправлена покупателю автоматически.
-            </p>
-          </div>
-        </div>
-      `
+        `
     });
 
-    console.log(`✅ Письмо со ссылкой отправлено покупателю на ${customerEmail}`);
     console.log(`✅ Уведомление об оплате отправлено вам`);
 
     res.status(200).send('OK');
@@ -617,5 +689,3 @@ app.listen(PORT, () => {
   `);
 
 });
-
-
