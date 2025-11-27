@@ -405,23 +405,32 @@ app.post('/webhook/yoomoney', async (req, res) => {
       return res.status(200).send('OK');
     }
 
-    if (!customerEmail) {
-      console.error('❌ Email не указан в label:', label);
-      // Отправляем уведомление вам для ручной отправки
-      await transporter.sendMail({
-        from: `"FIXCAD MARKET - Проблема" <${process.env.EMAIL_USER}>`,
-        to: process.env.EMAIL_USER,
-        subject: `❌ Платеж получен, но email не указан: ${productInfo.name}`,
-        html: `
-          <p>Платеж получен, но email покупателя не указан в label.</p>
-          <p><strong>Товар:</strong> ${productInfo.name}</p>
-          <p><strong>Сумма:</strong> ${withdraw_amount} руб.</p>
-          <p><strong>Label:</strong> ${label}</p>
-          <p><strong>Ссылка для ручной отправки:</strong> ${productInfo.zipUrl}</p>
-          <p><strong>Время:</strong> ${new Date().toLocaleString('ru-RU')}</p>
-        `
-      });
-      return res.status(200).send('OK');
+    // Валидация email
+    function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
+    if (!customerEmail || !isValidEmail(customerEmail)) {
+        console.error('❌ Неверный или отсутствующий email:', customerEmail);
+        // Отправляем уведомление вам для ручной проверки
+        await transporter.sendMail({
+            from: `"FIXCAD MARKET - Проблема" <${process.env.EMAIL_USER}>`,
+            to: process.env.EMAIL_USER,
+            subject: `❌ Проблема с email в заказе: ${productInfo.name}`,
+            html: `
+                <p>Получен платеж, но с email покупателя проблема.</p>
+                <p><strong>Товар:</strong> ${productInfo.name}</p>
+                <p><strong>Email:</strong> ${customerEmail || 'не указан'}</p>
+                <p><strong>Сумма:</strong> ${withdraw_amount} руб.</p>
+                <p><strong>Label:</strong> ${label}</p>
+                <p><strong>Ссылка для ручной отправки:</strong> ${productInfo.zipUrl}</p>
+                <p><strong>Время:</strong> ${new Date().toLocaleString('ru-RU')}</p>
+                <p style="color: red; font-weight: bold;">ВНИМАНИЕ: Покупатель не получил файл автоматически!</p>
+                <p>Свяжитесь с покупателем для отправки файла вручную.</p>
+            `
+        });
+        return res.status(200).send('OK');
     }
 
     // ОТПРАВЛЯЕМ письмо со ссылкой для скачивания покупателю
