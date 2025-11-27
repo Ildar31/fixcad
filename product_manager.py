@@ -75,17 +75,39 @@ class ProductManager:
         formats_frame = ttk.Frame(form_frame)
         formats_frame.grid(row=5, column=1, sticky=(tk.W, tk.E), pady=2)
         
+        # Первый ряд форматов
+        formats_row1 = ttk.Frame(formats_frame)
+        formats_row1.pack(fill=tk.X)
+        
         self.cdw_var = tk.BooleanVar(value=True)
         self.spw_var = tk.BooleanVar(value=True)
         self.a3d_var = tk.BooleanVar(value=True)
         self.m3d_var = tk.BooleanVar(value=True)
         self.stl_var = tk.BooleanVar(value=False)
         
-        ttk.Checkbutton(formats_frame, text="CDW", variable=self.cdw_var).pack(side=tk.LEFT)
-        ttk.Checkbutton(formats_frame, text="SPW", variable=self.spw_var).pack(side=tk.LEFT)
-        ttk.Checkbutton(formats_frame, text="A3D", variable=self.a3d_var).pack(side=tk.LEFT)
-        ttk.Checkbutton(formats_frame, text="M3D", variable=self.m3d_var).pack(side=tk.LEFT)
-        ttk.Checkbutton(formats_frame, text="STL", variable=self.stl_var).pack(side=tk.LEFT)
+        ttk.Checkbutton(formats_row1, text="CDW", variable=self.cdw_var).pack(side=tk.LEFT)
+        ttk.Checkbutton(formats_row1, text="SPW", variable=self.spw_var).pack(side=tk.LEFT)
+        ttk.Checkbutton(formats_row1, text="A3D", variable=self.a3d_var).pack(side=tk.LEFT)
+        ttk.Checkbutton(formats_row1, text="M3D", variable=self.m3d_var).pack(side=tk.LEFT)
+        ttk.Checkbutton(formats_row1, text="STL", variable=self.stl_var).pack(side=tk.LEFT)
+        
+        # Второй ряд форматов (новые)
+        formats_row2 = ttk.Frame(formats_frame)
+        formats_row2.pack(fill=tk.X, pady=(5, 0))
+        
+        self.step_var = tk.BooleanVar(value=False)
+        self.pdf_var = tk.BooleanVar(value=False)
+        self.doc_var = tk.BooleanVar(value=False)
+        self.xls_var = tk.BooleanVar(value=False)
+        self.txt_var = tk.BooleanVar(value=False)
+        self.exe_var = tk.BooleanVar(value=False)
+        
+        ttk.Checkbutton(formats_row2, text="STEP", variable=self.step_var).pack(side=tk.LEFT)
+        ttk.Checkbutton(formats_row2, text="PDF", variable=self.pdf_var).pack(side=tk.LEFT)
+        ttk.Checkbutton(formats_row2, text="DOC", variable=self.doc_var).pack(side=tk.LEFT)
+        ttk.Checkbutton(formats_row2, text="XLS", variable=self.xls_var).pack(side=tk.LEFT)
+        ttk.Checkbutton(formats_row2, text="TXT", variable=self.txt_var).pack(side=tk.LEFT)
+        ttk.Checkbutton(formats_row2, text="EXE", variable=self.exe_var).pack(side=tk.LEFT)
         
         # 3D модель
         ttk.Label(form_frame, text="Есть 3D модель:").grid(row=6, column=0, sticky=tk.W, pady=2)
@@ -197,6 +219,12 @@ class ProductManager:
         if self.a3d_var.get(): formats.append("A3D")
         if self.m3d_var.get(): formats.append("M3D")
         if self.stl_var.get(): formats.append("STL")
+        if self.step_var.get(): formats.append("STEP")
+        if self.pdf_var.get(): formats.append("PDF")
+        if self.doc_var.get(): formats.append("DOC")
+        if self.xls_var.get(): formats.append("XLS")
+        if self.txt_var.get(): formats.append("TXT")
+        if self.exe_var.get(): formats.append("EXE")
             
         self.products[product_id] = {
             'name': self.name_var.get().strip(),
@@ -333,6 +361,12 @@ class ProductManager:
         if self.a3d_var.get(): formats.append("A3D")
         if self.m3d_var.get(): formats.append("M3D")
         if self.stl_var.get(): formats.append("STL")
+        if self.step_var.get(): formats.append("STEP")
+        if self.pdf_var.get(): formats.append("PDF")
+        if self.doc_var.get(): formats.append("DOC")
+        if self.xls_var.get(): formats.append("XLS")
+        if self.txt_var.get(): formats.append("TXT")
+        if self.exe_var.get(): formats.append("EXE")
             
         self.products[product_id] = {
             'name': self.name_var.get().strip(),
@@ -489,6 +523,12 @@ class ProductManager:
         self.a3d_var.set("A3D" in formats)
         self.m3d_var.set("M3D" in formats)
         self.stl_var.set("STL" in formats)
+        self.step_var.set("STEP" in formats)
+        self.pdf_var.set("PDF" in formats)
+        self.doc_var.set("DOC" in formats)
+        self.xls_var.set("XLS" in formats)
+        self.txt_var.set("TXT" in formats)
+        self.exe_var.set("EXE" in formats)
         
         # Устанавливаем 3D модель
         self.has_3d_var.set(product_data.get('has_3d', False))
@@ -502,7 +542,7 @@ class ProductManager:
         self.contents_text.delete("1.0", tk.END)
         self.contents_text.insert("1.0", '\n'.join(product_data['contents']))
 
-    def clear_form(self):
+     def clear_form(self):
         """Очищает форму"""
         self.product_id_var.set("")
         self.name_var.set("")
@@ -514,6 +554,12 @@ class ProductManager:
         self.a3d_var.set(True)
         self.m3d_var.set(True)
         self.stl_var.set(False)
+        self.step_var.set(False)
+        self.pdf_var.set(False)
+        self.doc_var.set(False)
+        self.xls_var.set(False)
+        self.txt_var.set(False)
+        self.exe_var.set(False)
         self.has_3d_var.set(False)
         self.image_path_var.set("")
         self.model_path_var.set("")
