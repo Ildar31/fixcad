@@ -899,10 +899,14 @@
                     messageDiv.innerHTML = '✅ Данные отправлены! Переход к оплате...';
                     messageDiv.style.display = 'block';
                     
-                    // Немедленный переход на страницу оплаты
+                    // Открываем оплату в новой вкладке
                     setTimeout(() => {
-                        window.location.href = PRODUCT_URLS[currentProduct];
-                    }, 1500);
+                        window.open(PRODUCT_URLS[currentProduct], '_blank');
+                        // Закрываем модальное окно формы
+                        document.getElementById('orderModal').style.display = 'none';
+                        // Показываем сообщение пользователю
+                        messageDiv.innerHTML = '✅ Данные отправлены! Открываем страницу оплаты...';
+                    }, 1000);
                     
                 } else {
                     throw new Error(result.error || 'Ошибка сервера');
