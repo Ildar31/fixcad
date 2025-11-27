@@ -52,8 +52,13 @@ const PRODUCTS = {
 // Настройка Mail.ru транспорта
 const transporter = nodemailer.createTransport({
   host: 'smtp.mail.ru',
-  port: 465,
-  secure: true,
+  port: 587,                    // ← Используйте порт 587 вместо 465
+  secure: false,                // ← false для порта 587
+  requireTLS: true,            // ← Требовать TLS
+  tls: {
+    rejectUnauthorized: false   // ← Игнорировать ошибки сертификатов
+  },
+  connectionTimeout: 10000,    // ← Таймаут 10 секунд
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
@@ -438,3 +443,4 @@ app.listen(PORT, () => {
   `);
 
 });
+
