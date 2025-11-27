@@ -564,6 +564,24 @@ class ProductManager:
                 flags=re.DOTALL
             )
             
+            # Обновляем объект PRODUCT_NAMES в JavaScript
+            product_names_js = self.generate_product_names_js()
+            new_content = re.sub(
+                r'const PRODUCT_NAMES = {.*?};',
+                f'const PRODUCT_NAMES = {product_names_js};',
+                new_content,
+                flags=re.DOTALL
+            )
+            
+            # Обновляем объект PRODUCT_URLS в JavaScript
+            product_urls_js = self.generate_product_urls_js()
+            new_content = re.sub(
+                r'const PRODUCT_URLS = {.*?};',
+                f'const PRODUCT_URLS = {product_urls_js};',
+                new_content,
+                flags=re.DOTALL
+            )
+            
             with open(self.index_html_path, 'w', encoding='utf-8') as f:
                 f.write(new_content)
             
@@ -571,6 +589,24 @@ class ProductManager:
             
         except Exception as e:
             messagebox.showerror("Ошибка", f"Не удалось обновить index.html: {str(e)}")
+
+    def generate_product_names_js(self):
+        """Генерирует JS код для названий товаров"""
+        names_js = "{\n"
+        for product_id, product_data in self.products.items():
+            names_js += f"    {product_id}: '{product_data['name']}',\n"
+        names_js += "}"
+        return names_js
+
+    def generate_product_urls_js(self):
+        """Генерирует JS код для URL товаров"""
+        urls_js = "{\n"
+        for product_id in self.products.keys():
+            # Генерируем URL для ЮMoney с правильной суммой (100 рублей = 10000 копеек)
+            url = f"https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label={product_id}"
+            urls_js += f"    {product_id}: '{url}',\n"
+        urls_js += "}"
+        return urls_js
 
     def generate_products_html(self):
         """Генерирует HTML код для товаров"""
