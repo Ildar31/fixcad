@@ -912,29 +912,44 @@
                     messageDiv.innerHTML = '✅ Данные отправлены! Открываем страницу оплаты...';
                     messageDiv.style.display = 'block';
                     
-                    // Открываем оплату с обработкой блокировки всплывающих окон
+                    // Прокручиваем к сообщению чтобы было видно
+                    messageDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    
+                    // Открываем оплату с УПРОЩЕННОЙ проверкой блокировки
                     setTimeout(() => {
                         const newWindow = window.open(smartPaymentUrl, '_blank', 'noopener,noreferrer');
                         
-                        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-                            // Если всплывающее окно заблокировано - показываем инструкцию
-                            messageDiv.innerHTML = `
-                                ❌ Браузер заблокировал открытие окна оплаты.<br>
-                                <strong>Нажмите на ссылку ниже для перехода к оплате:</strong><br>
-                                <a href="${smartPaymentUrl}" target="_blank" rel="noopener noreferrer" 
-                                   style="color: #FFD700; font-weight: bold; text-decoration: underline;">
-                                    🔗 Перейти к оплате на ЮMoney
-                                </a>
-                                <br><br>
-                                <small>После оплаты закройте вкладку ЮMoney и вернитесь на этот сайт</small>
-                            `;
-                            messageDiv.style.display = 'block';
+                        // УПРОЩЕННАЯ ПРОВЕРКА - только самая базовая
+                        let isBlocked = false;
+                        try {
+                            if (!newWindow || newWindow.closed) {
+                                isBlocked = true;
+                            }
+                        } catch (e) {
+                            isBlocked = true;
                         }
                         
-                        // Закрываем модальное окно через 3 секунды в любом случае
+                        if (isBlocked) {
+                            // Показываем ссылку для ручного перехода
+                            messageDiv.className = 'form-message error';
+                            messageDiv.innerHTML = `
+                                <div style="text-align: center;">
+                                    <strong>Открываем страницу оплаты...</strong><br><br>
+                                    <a href="${smartPaymentUrl}" target="_blank" rel="noopener noreferrer" 
+                                       style="display: inline-block; background: #4CAF50; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; margin: 10px 0;">
+                                        🔗 Перейти к оплате на ЮMoney
+                                    </a>
+                                    <br>
+                                    <small>Если страница не открылась автоматически, нажмите на кнопку выше</small>
+                                </div>
+                            `;
+                            messageDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                        
+                        // ЗАКРЫВАЕМ окно заказа в любом случае через 2 секунды
                         setTimeout(() => {
                             document.getElementById('orderModal').style.display = 'none';
-                        }, 3000);
+                        }, 2000);
                         
                     }, 1000);
                     
