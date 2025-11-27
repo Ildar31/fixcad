@@ -118,8 +118,8 @@ class ProductManager:
         button_frame = ttk.Frame(form_frame)
         button_frame.grid(row=10, column=0, columnspan=2, pady=10)
         
-        ttk.Button(button_frame, text="Добавить товар", command=self.add_product).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Обновить товар", command=self.update_product).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Новый товар", command=self.new_product).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Сохранить", command=self.update_product).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Очистить форму", command=self.clear_form).pack(side=tk.LEFT, padx=5)
         
         # Список товаров
@@ -153,7 +153,7 @@ class ProductManager:
         list_buttons_frame = ttk.Frame(list_frame)
         list_buttons_frame.grid(row=1, column=0, columnspan=2, pady=10)
         
-        ttk.Button(list_buttons_frame, text="Редактировать", command=self.edit_product).pack(side=tk.LEFT, padx=5)
+        ttk.Button(list_buttons_frame, text="Дублировать", command=self.duplicate_product).pack(side=tk.LEFT, padx=5)
         ttk.Button(list_buttons_frame, text="Удалить", command=self.delete_product).pack(side=tk.LEFT, padx=5)
         
         # Кнопки экспорта
@@ -176,6 +176,42 @@ class ProductManager:
         form_frame.columnconfigure(1, weight=1)
         list_frame.columnconfigure(0, weight=1)
         list_frame.rowconfigure(0, weight=1)
+        
+    def new_product(self):
+        """Создает новый товар и добавляет его в список"""
+        if not self.validate_form():
+            return
+            
+        product_id = self.product_id_var.get().strip()
+        if product_id in self.products:
+            messagebox.showerror("Ошибка", f"Товар с ID '{product_id}' уже существует!")
+            return
+        
+        # Копируем файлы
+        self.copy_product_files(product_id)
+        
+        # Собираем форматы
+        formats = []
+        if self.cdw_var.get(): formats.append("CDW")
+        if self.spw_var.get(): formats.append("SPW")
+        if self.a3d_var.get(): formats.append("A3D")
+        if self.m3d_var.get(): formats.append("M3D")
+        if self.stl_var.get(): formats.append("STL")
+            
+        self.products[product_id] = {
+            'name': self.name_var.get().strip(),
+            'description': self.desc_var.get().strip(),
+            'zipUrl': self.zip_url_var.get().strip(),
+            'zipName': self.zip_name_var.get().strip(),
+            'contents': [line.strip() for line in self.contents_text.get("1.0", tk.END).strip().split('\n') if line.strip()],
+            'formats': formats,
+            'has_3d': self.has_3d_var.get(),
+            'has_image': bool(self.image_path_var.get()),
+            'has_model': bool(self.model_path_var.get()) and self.has_3d_var.get()
+        }
+        
+        self.refresh_tree()
+        messagebox.showinfo("Успех", f"Товар '{self.name_var.get()}' добавлен!")
         
     def select_image(self):
         """Выбор изображения товара"""
@@ -277,43 +313,6 @@ class ProductManager:
                 files_status
             ))
 
-    def add_product(self):
-        """Добавляет новый товар"""
-        if not self.validate_form():
-            return
-            
-        product_id = self.product_id_var.get().strip()
-        if product_id in self.products:
-            messagebox.showerror("Ошибка", f"Товар с ID '{product_id}' уже существует!")
-            return
-        
-        # Копируем файлы
-        self.copy_product_files(product_id)
-        
-        # Собираем форматы
-        formats = []
-        if self.cdw_var.get(): formats.append("CDW")
-        if self.spw_var.get(): formats.append("SPW")
-        if self.a3d_var.get(): formats.append("A3D")
-        if self.m3d_var.get(): formats.append("M3D")
-        if self.stl_var.get(): formats.append("STL")
-            
-        self.products[product_id] = {
-            'name': self.name_var.get().strip(),
-            'description': self.desc_var.get().strip(),
-            'zipUrl': self.zip_url_var.get().strip(),
-            'zipName': self.zip_name_var.get().strip(),
-            'contents': [line.strip() for line in self.contents_text.get("1.0", tk.END).strip().split('\n') if line.strip()],
-            'formats': formats,
-            'has_3d': self.has_3d_var.get(),
-            'has_image': bool(self.image_path_var.get()),
-            'has_model': bool(self.model_path_var.get()) and self.has_3d_var.get()
-        }
-        
-        self.refresh_tree()
-        self.clear_form()
-        messagebox.showinfo("Успех", f"Товар '{self.name_var.get()}' добавлен!")
-
     def update_product(self):
         """Обновляет существующий товар"""
         if not self.validate_form():
@@ -349,6 +348,94 @@ class ProductManager:
         
         self.refresh_tree()
         messagebox.showinfo("Успех", f"Товар '{self.name_var.get()}' обновлен!")
+
+    def duplicate_product(self):
+        """Дублирует выбранный товар вместе с файлами"""
+        selection = self.tree.selection()
+        if not selection:
+            messagebox.showwarning("Внимание", "Выберите товар для дублирования!")
+            return
+            
+        product_id = self.tree.item(selection[0])['values'][0]
+        product_data = self.products[product_id]
+        
+        # Создаем новый ID на основе старого
+        base_id = product_id
+        counter = 1
+        new_id = f"{base_id}_{counter}"
+        
+        # Ищем свободный ID
+        while new_id in self.products:
+            counter += 1
+            new_id = f"{base_id}_{counter}"
+        
+        # Копируем файлы изображения
+        has_image = False
+        image_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp']
+        for ext in image_extensions:
+            old_image_path = os.path.join(self.images_dir, f"{product_id}{ext}")
+            if os.path.exists(old_image_path):
+                new_image_path = os.path.join(self.images_dir, f"{new_id}{ext}")
+                shutil.copy2(old_image_path, new_image_path)
+                has_image = True
+                break
+        
+        # Копируем файл 3D модели
+        has_model = False
+        old_model_path = os.path.join(self.models_dir, f"{product_id}.stl")
+        if os.path.exists(old_model_path) and product_data.get('has_3d', False):
+            new_model_path = os.path.join(self.models_dir, f"{new_id}.stl")
+            shutil.copy2(old_model_path, new_model_path)
+            has_model = True
+        
+        # Копируем данные товара
+        new_product_data = {
+            'name': f"{product_data['name']} (копия {counter})",
+            'description': product_data['description'],
+            'zipUrl': product_data['zipUrl'],
+            'zipName': product_data['zipName'],
+            'contents': product_data['contents'][:],
+            'formats': product_data['formats'][:],
+            'has_3d': product_data.get('has_3d', False),
+            'has_image': has_image,
+            'has_model': has_model
+        }
+        
+        # Добавляем новый товар
+        self.products[new_id] = new_product_data
+        
+        # Обновляем дерево и очищаем форму
+        self.refresh_tree()
+        self.clear_form()
+        
+        messagebox.showinfo("Успех", f"Товар '{product_data['name']}' продублирован как '{new_id}'!")
+
+        # Автоматически заполняем форму для редактирования нового товара
+        self.product_id_var.set(new_id)
+        self.name_var.set(new_product_data['name'])
+        self.desc_var.set(new_product_data['description'])
+        self.zip_url_var.set(new_product_data['zipUrl'])
+        self.zip_name_var.set(new_product_data['zipName'])
+        
+        # Устанавливаем форматы
+        formats = new_product_data['formats']
+        self.cdw_var.set("CDW" in formats)
+        self.spw_var.set("SPW" in formats)
+        self.a3d_var.set("A3D" in formats)
+        self.m3d_var.set("M3D" in formats)
+        self.stl_var.set("STL" in formats)
+        
+        # Устанавливаем 3D модель
+        self.has_3d_var.set(new_product_data['has_3d'])
+        
+        # Показываем статус файлов
+        if has_image:
+            self.image_path_var.set("(файл скопирован)")
+        if has_model:
+            self.model_path_var.set("(файл скопирован)")
+        
+        self.contents_text.delete("1.0", tk.END)
+        self.contents_text.insert("1.0", '\n'.join(new_product_data['contents']))
 
     def delete_product(self):
         """Удаляет выбранный товар"""
