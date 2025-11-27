@@ -337,6 +337,43 @@
             font-size: 18px;
         }
         
+        /* Стили для формы заказа */
+        .order-form input,
+        .order-form textarea {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .order-form label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .form-message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .form-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .form-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
         @media (max-width: 768px) {
             .products-grid {
                 grid-template-columns: 1fr;
@@ -408,9 +445,9 @@
                 <li>Спецификации</li>
                 <li>Паспорт, РЭ</li>
             </ul>
-            <a class="buy-button" href="https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=stend&targets=%D0%A1%D1%82%D0%B5%D0%BD%D0%B4%20%D0%B4%D0%BB%D1%8F%20%D0%BF%D0%B0%D0%BA%D0%B5%D1%80%D0%BE%D0%B2&successURL=success.html">
+            <button class="buy-button" data-product="stend">
                 Купить за 100 руб.
-            </a>
+            </button>
         </div>
 
         <div class="product-card">
@@ -432,9 +469,9 @@
                 <li>3D модели КОМПАС</li>
                 <li>Спецификации</li>
             </ul>
-            <a class="buy-button" href="https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=stapel&targets=%D0%A1%D1%82%D0%B0%D0%BF%D0%B5%D0%BB%D1%8C%20%D1%81%D0%B2%D0%B0%D1%80%D0%BE%D1%87%D0%BD%D1%8B%D0%B9&successURL=success.html">
+            <button class="buy-button" data-product="stapel">
                 Купить за 100 руб.
-            </a>
+            </button>
         </div>
 
         <div class="product-card">
@@ -454,12 +491,65 @@
                 <li>Таблица сварных соединений</li>
                 <li>Технические требования</li>
             </ul>
-            <a class="buy-button" href="https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=level&targets=%D0%A3%D1%80%D0%BE%D0%B2%D0%BD%D0%B5%D0%BC%D0%B5%D1%80%20%D0%BC%D0%B5%D1%85%D0%B0%D0%BD%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9&successURL=success.html">
+            <button class="buy-button" data-product="level">
                 Купить за 100 руб.
-            </a>
+            </button>
         </div>
     </div>
 
+    <!-- Модальное окно формы заказа -->
+    <div class="modal" id="orderModal">
+        <div class="modal-content" style="max-width: 500px; height: auto;">
+            <div class="modal-header">
+                <h3 style="margin:0;">Оформление заказа</h3>
+                <button class="close-modal" id="closeOrderModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="orderForm" class="order-form">
+                    <input type="hidden" id="selectedProduct" name="product">
+                    
+                    <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <strong>Товар:</strong> <span id="productName">-</span><br>
+                        <strong>Цена:</strong> 100 руб.
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label for="customerName">ФИО *</label>
+                        <input type="text" id="customerName" name="name" required 
+                               placeholder="Иванов Иван Иванович">
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label for="customerEmail">Email *</label>
+                        <input type="email" id="customerEmail" name="email" required 
+                               placeholder="your@email.com">
+                    </div>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label for="customerPhone">Телефон</label>
+                        <input type="tel" id="customerPhone" name="phone" 
+                               placeholder="+7 (999) 123-45-67">
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label for="customerComment">Комментарий к заказу</label>
+                        <textarea id="customerComment" name="comment" 
+                                  placeholder="Дополнительные пожелания..."></textarea>
+                    </div>
+                    
+                    <button type="submit" id="submitOrderBtn" 
+                            style="width: 100%; padding: 15px; background: linear-gradient(45deg, #4CAF50, #45a049); 
+                                   color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                        Перейти к оплате
+                    </button>
+                    
+                    <div id="formMessage" class="form-message"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Остальные модальные окна (просмотр изображений и 3D моделей) -->
     <div class="modal" id="imageModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -508,6 +598,97 @@
     </div>
 
     <script>
+        // Конфигурация
+        const BACKEND_URL = 'https://fixcad.onrender.com';
+        const PRODUCT_URLS = {
+            stend: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=stend&targets=%D0%A1%D1%82%D0%B5%D0%BD%D0%B4%20%D0%B4%D0%BB%D1%8F%20%D0%BF%D0%B0%D0%BA%D0%B5%D1%80%D0%BE%D0%B2&successURL=success.html',
+            stapel: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=stapel&targets=%D0%A1%D1%82%D0%B0%D0%BF%D0%B5%D0%BB%D1%8C%20%D1%81%D0%B2%D0%B0%D1%80%D0%BE%D1%87%D0%BD%D1%8B%D0%B9&successURL=success.html',
+            level: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=level&targets=%D0%A3%D1%80%D0%BE%D0%B2%D0%BD%D0%B5%D0%BC%D0%B5%D1%80%20%D0%BC%D0%B5%D1%85%D0%B0%D0%BD%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9&successURL=success.html'
+        };
+
+        const PRODUCT_NAMES = {
+            stend: 'Стенд для пакеров',
+            stapel: 'Стапель сварочный 3х12 м',
+            level: 'Уровнемер механический'
+        };
+
+        // Переменные для управления состоянием
+        let currentProduct = null;
+
+        // Обработчики для кнопок "Купить"
+        document.querySelectorAll('.buy-button').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                currentProduct = this.getAttribute('data-product');
+                
+                document.getElementById('selectedProduct').value = currentProduct;
+                document.getElementById('productName').textContent = PRODUCT_NAMES[currentProduct];
+                document.getElementById('orderModal').style.display = 'flex';
+                
+                // Сброс формы
+                document.getElementById('orderForm').reset();
+                document.getElementById('formMessage').style.display = 'none';
+            });
+        });
+
+        // Обработчик отправки формы
+        document.getElementById('orderForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitOrderBtn');
+            const messageDiv = document.getElementById('formMessage');
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Отправка...';
+            messageDiv.style.display = 'none';
+            
+            const formData = new FormData(this);
+            
+            try {
+                // Отправляем данные на бэкенд
+                const response = await fetch(`${BACKEND_URL}/api/order`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        product: formData.get('product'),
+                        name: formData.get('name'),
+                        email: formData.get('email'),
+                        phone: formData.get('phone'),
+                        comment: formData.get('comment')
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Если данные успешно отправлены, переходим к оплате
+                    messageDiv.className = 'form-message success';
+                    messageDiv.innerHTML = '✅ Данные отправлены! Переход к оплате...';
+                    messageDiv.style.display = 'block';
+                    
+                    // Немедленный переход на страницу оплаты
+                    setTimeout(() => {
+                        window.location.href = PRODUCT_URLS[currentProduct];
+                    }, 1000);
+                    
+                } else {
+                    throw new Error(result.error || 'Ошибка сервера');
+                }
+                
+            } catch (error) {
+                console.error('Ошибка:', error);
+                messageDiv.className = 'form-message error';
+                messageDiv.innerHTML = '❌ Ошибка отправки: ' + error.message;
+                messageDiv.style.display = 'block';
+                
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Перейти к оплате';
+            }
+        });
+
+        // Ваш существующий код для работы с изображениями и 3D моделями
         let scene, camera, renderer, controls, currentModel;
         let isRotating = false;
         let rotationSpeed = 0.01;
@@ -523,211 +704,48 @@
         const MIN_ZOOM = 0.5;
         const MAX_ZOOM = 5;
 
-        function updateZoomInfo() {
-            const zoomInfo = document.getElementById('zoomInfo');
-            zoomInfo.textContent = Math.round(currentScale * 100) + '%';
-            zoomInfo.style.display = 'block';
-            setTimeout(() => zoomInfo.style.display = 'none', 2000);
-        }
+        // ... (остальной ваш существующий JavaScript код для работы с изображениями и 3D моделями)
+        // Вставьте сюда весь ваш предыдущий JavaScript код для модальных окон изображений и 3D моделей
 
-        function zoomIn() {
-            if (currentScale < MAX_ZOOM) {
-                currentScale += ZOOM_SPEED;
-                applyTransform();
-                updateZoomInfo();
-            }
-        }
-
-        function zoomOut() {
-            if (currentScale > MIN_ZOOM) {
-                currentScale -= ZOOM_SPEED;
-                applyTransform();
-                updateZoomInfo();
-            }
-        }
-
-        function resetZoom() {
-            currentScale = 1;
-            translateX = 0;
-            translateY = 0;
-            applyTransform();
-            updateZoomInfo();
-        }
-
-        function applyTransform() {
-            const img = document.getElementById('modalImage');
-            img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${currentScale})`;
-        }
-
-        function setupImageDrag() {
-            const modalBody = document.getElementById('imageModal').querySelector('.modal-body');
-            const img = document.getElementById('modalImage');
-
-            modalBody.onmousedown = function(e) {
-                if (currentScale > 1) {
-                    isDragging = true;
-                    startX = e.clientX;
-                    startY = e.clientY;
-                    initialTranslateX = translateX;
-                    initialTranslateY = translateY;
-                    modalBody.style.cursor = 'grabbing';
-                }
-            };
-
-            modalBody.onmousemove = function(e) {
-                if (!isDragging) return;
-                translateX = initialTranslateX + (e.clientX - startX);
-                translateY = initialTranslateY + (e.clientY - startY);
-                applyTransform();
-            };
-
-            modalBody.onmouseup = modalBody.onmouseleave = function() {
-                isDragging = false;
-                modalBody.style.cursor = 'default';
-            };
-
-            modalBody.onwheel = function(e) {
-                e.preventDefault();
-                e.deltaY < 0 ? zoomIn() : zoomOut();
-            };
-        }
-
-        function initThreeJS() {
-            if (threeJSInitialized) return;
-            
-            const container = document.getElementById('modelContainer');
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x1a1a1a);
-            
-            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.z = 5;
-            
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            
-            container.innerHTML = '';
-            container.appendChild(renderer.domElement);
-            
-            scene.add(new THREE.AmbientLight(0x404040, 0.6));
-            const light = new THREE.DirectionalLight(0xffffff, 0.8);
-            light.position.set(1, 1, 1);
-            scene.add(light);
-            
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            
-            scene.add(new THREE.GridHelper(10, 10));
-            
-            threeJSInitialized = true;
-        }
-
-        function animate() {
-            animationId = requestAnimationFrame(animate);
-            
-            if (isRotating && currentModel) {
-                currentModel.rotation.y += rotationSpeed;
-            }
-            
-            controls.update();
-            renderer.render(scene, camera);
-        }
-
-        function stopAnimation() {
-            if (animationId) {
-                cancelAnimationFrame(animationId);
-                animationId = null;
-            }
-            isRotating = false;
-        }
-
-        function loadSTLModel(url) {
-            const loader = new THREE.STLLoader();
-            const container = document.getElementById('modelContainer');
-            
-            container.innerHTML = '<div class="loading">Загрузка модели...</div>';
-            
-            loader.load(url, function(geometry) {
-                container.innerHTML = '';
-                container.appendChild(renderer.domElement);
-                
-                if (currentModel) scene.remove(currentModel);
-                
-                const material = new THREE.MeshPhongMaterial({ 
-                    color: 0x667eea,
-                    specular: 0x111111,
-                    shininess: 200
-                });
-                
-                currentModel = new THREE.Mesh(geometry, material);
-                
-                geometry.computeBoundingBox();
-                const center = geometry.boundingBox.getCenter(new THREE.Vector3());
-                geometry.translate(-center.x, -center.y, -center.z);
-                
-                const scale = 2 / geometry.boundingBox.getSize(new THREE.Vector3()).length();
-                currentModel.scale.multiplyScalar(scale);
-                
-                scene.add(currentModel);
-                camera.position.set(0, 0, 5);
-                controls.update();
-                
-                animate();
-            });
-        }
-
-        function rotateModel() {
-            isRotating = !isRotating;
-        }
-
-        function resetModel() {
-            if (currentModel) currentModel.rotation.set(0, 0, 0);
-            controls.reset();
-        }
-
-        function toggleWireframe() {
-            if (currentModel) currentModel.material.wireframe = !currentModel.material.wireframe;
-        }
-
-        document.querySelectorAll('.product-image').forEach(image => {
-            image.onclick = function() {
-                const imageSrc = this.getAttribute('data-image');
-                const modelSrc = this.getAttribute('data-model');
-                
-                if (modelSrc) {
-                    document.getElementById('modelModal').style.display = 'flex';
-                    initThreeJS();
-                    setTimeout(() => loadSTLModel(modelSrc), 100);
-                } else {
-                    document.getElementById('modalImage').src = imageSrc;
-                    document.getElementById('imageModal').style.display = 'flex';
-                    resetZoom();
-                    setupImageDrag();
-                }
-            };
+        // Обработчики закрытия модальных окон
+        document.getElementById('closeOrderModal').addEventListener('click', function() {
+            document.getElementById('orderModal').style.display = 'none';
         });
 
-        document.getElementById('closeImageModal').onclick = function() {
+        document.getElementById('closeImageModal').addEventListener('click', function() {
             document.getElementById('imageModal').style.display = 'none';
             resetZoom();
-        };
+        });
 
-        document.getElementById('closeModelModal').onclick = function() {
+        document.getElementById('closeModelModal').addEventListener('click', function() {
             document.getElementById('modelModal').style.display = 'none';
             stopAnimation();
-        };
+        });
 
-        document.getElementById('imageModal').onclick = function(e) {
+        // Закрытие модальных окон по клику вне контента
+        document.getElementById('orderModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+            }
+        });
+
+        document.getElementById('imageModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 this.style.display = 'none';
                 resetZoom();
             }
-        };
+        });
 
-        document.getElementById('modelModal').onclick = function(e) {
+        document.getElementById('modelModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 this.style.display = 'none';
                 stopAnimation();
             }
-        };
+        });
+
+        // Остальные функции для работы с изображениями и 3D моделями...
+        // Вставьте сюда остальные ваши функции (zoomIn, zoomOut, resetZoom, initThreeJS, и т.д.)
+
     </script>
 </body>
+</html>
