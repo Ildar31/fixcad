@@ -507,30 +507,25 @@
             width: 100%;
             max-width: 500px;
             height: auto;
-            max-height: 90vh;
-            overflow-y: auto;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
         }
         
         .order-modal-body {
             padding: 25px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .form-container {
+            min-height: min-content;
         }
         
         @media (max-width: 768px) {
-            .products-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .header h1 {
-                font-size: 1.8em;
-            }
-            
-            .modal-content {
-                height: 60vh;
-            }
-            
-            .guarantee-item {
-                min-width: 120px;
-                padding: 10px;
+            .order-modal-content {
+                max-height: 90vh;
+                margin: 10px;
             }
             
             .order-modal-body {
@@ -541,11 +536,6 @@
         @media (max-width: 480px) {
             .order-modal-body {
                 padding: 15px;
-            }
-            
-            .form-input,
-            .form-textarea {
-                padding: 10px 12px;
             }
         }
     </style>
@@ -661,62 +651,64 @@
                 <button class="close-modal" id="closeOrderModal">&times;</button>
             </div>
             <div class="modal-body order-modal-body">
-                <form id="orderForm" class="order-form">
-                    <input type="hidden" id="selectedProduct" name="product">
-                    
-                    <div class="product-summary">
-                        <h4>📦 Ваш заказ</h4>
-                        <p><strong>Товар:</strong> <span id="productName">-</span></p>
-                        <p><strong>Цена:</strong> 100 рублей</p>
-                    </div>
+                <div class="form-container">
+                    <form id="orderForm" class="order-form">
+                        <input type="hidden" id="selectedProduct" name="product">
+                        
+                        <div class="product-summary">
+                            <h4>📦 Ваш заказ</h4>
+                            <p><strong>Товар:</strong> <span id="productName">-</span></p>
+                            <p><strong>Цена:</strong> 100 рублей</p>
+                        </div>
 
-                    <div class="warning-box">
-                        <h4>⚠️ Внимание!</h4>
-                        <p>Ссылка для скачивания будет отправлена на указанный email после оплаты. Проверьте правильность ввода email!</p>
-                    </div>
+                        <div class="warning-box">
+                            <h4>⚠️ Внимание!</h4>
+                            <p>Ссылка для скачивания будет отправлена на указанный email после оплаты. Проверьте правильность ввода email!</p>
+                        </div>
 
-                    <div class="form-group">
-                        <label class="form-label">
-                            ФИО <span class="required">*</span>
-                        </label>
-                        <input type="text" class="form-input" id="customerName" name="name" required 
-                               placeholder="Иванов Иван Иванович">
-                        <span class="form-help">Укажите ваше полное имя для связи</span>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">
-                            Email <span class="required">*</span>
-                        </label>
-                        <input type="email" class="form-input" id="customerEmail" name="email" required 
-                               placeholder="your@email.com">
-                        <span class="form-help">На этот адрес будет отправлена ссылка для скачивания</span>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">
-                            Телефон <span class="optional">(необязательно)</span>
-                        </label>
-                        <input type="tel" class="form-input" id="customerPhone" name="phone" 
-                               placeholder="+7 (999) 123-45-67">
-                        <span class="form-help">Для экстренной связи в случае проблем с доставкой</span>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">
-                            Комментарий к заказу <span class="optional">(необязательно)</span>
-                        </label>
-                        <textarea class="form-textarea" id="customerComment" name="comment" 
-                                  placeholder="Дополнительные пожелания или вопросы..."></textarea>
-                        <span class="form-help">Любая дополнительная информация по вашему заказу</span>
-                    </div>
-                    
-                    <button type="submit" id="submitOrderBtn" class="submit-button">
-                        Перейти к оплате
-                    </button>
-                    
-                    <div id="formMessage" class="form-message"></div>
-                </form>
+                        <div class="form-group">
+                            <label class="form-label">
+                                ФИО <span class="required">*</span>
+                            </label>
+                            <input type="text" class="form-input" id="customerName" name="name" required 
+                                   placeholder="Иванов Иван Иванович">
+                            <span class="form-help">Укажите ваше полное имя для связи</span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                Email <span class="required">*</span>
+                            </label>
+                            <input type="email" class="form-input" id="customerEmail" name="email" required 
+                                   placeholder="your@email.com">
+                            <span class="form-help">На этот адрес будет отправлена ссылка для скачивания</span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                Телефон <span class="optional">(необязательно)</span>
+                            </label>
+                            <input type="tel" class="form-input" id="customerPhone" name="phone" 
+                                   placeholder="+7 (999) 123-45-67">
+                            <span class="form-help">Для экстренной связи в случае проблем с доставкой</span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                Комментарий к заказу <span class="optional">(необязательно)</span>
+                            </label>
+                            <textarea class="form-textarea" id="customerComment" name="comment" 
+                                      placeholder="Дополнительные пожелания или вопросы..."></textarea>
+                            <span class="form-help">Любая дополнительная информация по вашему заказу</span>
+                        </div>
+                        
+                        <button type="submit" id="submitOrderBtn" class="submit-button">
+                            Перейти к оплате
+                        </button>
+                        
+                        <div id="formMessage" class="form-message"></div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
