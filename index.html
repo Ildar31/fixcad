@@ -908,8 +908,12 @@
                         // Создаем новое окно и сразу убиваем все связи
                         const newWindow = window.open('', '_blank');
                         if (newWindow) {
+                            // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Полностью разрываем связь с новым окном
                             newWindow.opener = null;
-                            newWindow.location.href = PRODUCT_URLS[currentProduct];
+                            newWindow.location = PRODUCT_URLS[currentProduct];
+                        } else {
+                            // Если блокировщик всплывающих окон, открываем в текущем окне
+                            window.location.href = PRODUCT_URLS[currentProduct];
                         }
                         document.getElementById('orderModal').style.display = 'none';
                     }, 1000);
