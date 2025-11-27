@@ -4,8 +4,7 @@
   "description": "Backend для FIXCAD MARKET",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "postinstall": "npm audit fix"
+    "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
