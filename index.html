@@ -5,6 +5,72 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Магазин чертежей и 3D моделей</title>
 
+    <!-- SEO и мета-теги -->
+    <meta name="description" content="FIXCAD MARKET - качественные чертежи и 3D-модели КОМПАС. Стенды для пакеров, сварочные стапели, уровнемеры. Все товары по 100 рублей. Мгновенная доставка.">
+    <meta name="keywords" content="чертежи КОМПАС, 3D модели, CAD, инженерные чертежи, стенд для пакеров, сварочный стапель, уровнемер, проектирование">
+    <meta name="author" content="FIXCAD MARKET">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="FIXCAD MARKET - Чертежи и 3D-модели КОМПАС">
+    <meta property="og:description" content="Качественные чертежи и 3D-модели для конструкторов и проектировщиков. Все товары по 100 рублей.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://fixcad-market.ru">
+
+    <!-- Яндекс.Вебмастер -->
+    <meta name="yandex-verification" content="ваш_код_верификации">
+
+    <!-- Google Search Console -->
+    <meta name="google-site-verification" content="ваш_код_верификации">
+
+    <!-- Яндекс.Метрика -->
+    <script type="text/javascript">
+        (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+        (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+
+        ym(96000000, "init", {
+            clickmap:true,
+            trackLinks:true,
+            accurateTrackBounce:true,
+            webvisor:true
+        });
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/96000000" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+
+    <!-- Структурированные данные Schema.org -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "FIXCAD MARKET",
+        "description": "Магазин чертежей и 3D-моделей КОМПАС",
+        "url": "https://fixcad-market.ru",
+        "logo": "https://fixcad-market.ru/images/logo.png",
+        "email": "irashitov79@mail.ru",
+        "address": {
+            "@type": "PostalAddress",
+            "addressCountry": "RU"
+        }
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "FIXCAD MARKET",
+        "description": "Магазин чертежей и 3D-моделей КОМПАС",
+        "url": "https://fixcad-market.ru",
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://fixcad-market.ru/search?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+        }
+    }
+    </script>
+
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="images/favicon.ico">
     <link rel="icon" type="image/png" href="images/favicon.png">
@@ -538,6 +604,65 @@
                 padding: 15px;
             }
         }
+
+        /* Юридический футер */
+        .legal-footer {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .legal-links {
+            margin-bottom: 15px;
+        }
+        
+        .legal-links a {
+            color: #FFD700;
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 14px;
+            border-bottom: 1px dashed #FFD700;
+            cursor: pointer;
+        }
+        
+        .legal-links a:hover {
+            color: white;
+            border-bottom-color: white;
+        }
+        
+        .copyright {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        /* Стили для юридического контента */
+        .legal-content {
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .legal-content h4 {
+            color: #2c3e50;
+            margin: 20px 0 10px 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        
+        .legal-content p {
+            margin-bottom: 15px;
+        }
+        
+        .legal-content ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .legal-content li {
+            margin-bottom: 8px;
+        }
     </style>
 </head>
 <body>
@@ -754,6 +879,155 @@
     </div>
 
     <script>
+        // Автоматическое обновление года в копирайте
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentYear = new Date().getFullYear();
+            document.getElementById('currentYear').textContent = currentYear;
+        });
+
+        // Юридические документы
+        const LEGAL_DOCUMENTS = {
+            privacy: {
+                title: "Политика конфиденциальности",
+                content: `
+                    <div class="legal-content">
+                        <h4>1. Общие положения</h4>
+                        <p>1.1. Настоящая Политика конфиденциальности регулирует порядок обработки и защиты персональных данных пользователей сайта FIXCAD MARKET.</p>
+                        <p>1.2. Используя сайт, вы даете согласие на обработку ваших персональных данных в соответствии с настоящей Политикой.</p>
+                        
+                        <h4>2. Собираемая информация</h4>
+                        <p>2.1. При оформлении заказа мы собираем следующую информацию:</p>
+                        <ul>
+                            <li>ФИО</li>
+                            <li>Адрес электронной почты</li>
+                            <li>Номер телефона (по желанию)</li>
+                            <li>Комментарии к заказу</li>
+                        </ul>
+                        
+                        <h4>3. Использование информации</h4>
+                        <p>3.1. Собранная информация используется для:</p>
+                        <ul>
+                            <li>Обработки и выполнения заказов</li>
+                            <li>Отправки цифровых товаров</li>
+                            <li>Обеспечения технической поддержки</li>
+                            <li>Улучшения качества обслуживания</li>
+                        </ul>
+                        
+                        <h4>4. Защита данных</h4>
+                        <p>4.1. Мы принимаем необходимые меры для защиты ваших персональных данных от несанкционированного доступа.</p>
+                        
+                        <h4>5. Третьи стороны</h4>
+                        <p>5.1. Мы не передаем ваши персональные данные третьим лицам, за исключением случаев, предусмотренных законодательством РФ.</p>
+                    </div>
+                `
+            },
+            terms: {
+                title: "Пользовательское соглашение",
+                content: `
+                    <div class="legal-content">
+                        <h4>1. Общие условия</h4>
+                        <p>1.1. Настоящее Соглашение регулирует отношения между FIXCAD MARKET (Продавец) и Покупателем цифровых товаров.</p>
+                        
+                        <h4>2. Предмет соглашения</h4>
+                        <p>2.1. Продавец обязуется передать, а Покупатель обязуется оплатить и принять цифровые товары (чертежи и 3D-модели).</p>
+                        
+                        <h4>3. Порядок приобретения товаров</h4>
+                        <p>3.1. Для приобретения товара Покупатель заполняет форму заказа и производит оплату через сервис ЮMoney.</p>
+                        <p>3.2. После подтверждения оплаты товар отправляется на указанный email адрес.</p>
+                        
+                        <h4>4. Права интеллектуальной собственности</h4>
+                        <p>4.1. Все товары являются результатом интеллектуальной деятельности и защищены законодательством об авторском праве.</p>
+                        <p>4.2. Покупатель получает право использования товаров для личных и коммерческих целей.</p>
+                        <p>4.3. Запрещается распространение, копирование и перепродажа товаров без письменного разрешения Продавца.</p>
+                        
+                        <h4>5. Ответственность</h4>
+                        <p>5.1. Продавец не несет ответственности за использование товаров Покупателем.</p>
+                        <p>5.2. Все претензии по качеству товаров принимаются в течение 14 дней с момента покупки.</p>
+                    </div>
+                `
+            },
+            refund: {
+                title: "Политика возвратов",
+                content: `
+                    <div class="legal-content">
+                        <h4>1. Общие положения</h4>
+                        <p>1.1. В соответствии с законодательством РФ, цифровые товары надлежащего качества возврату и обмену не подлежат.</p>
+                        
+                        <h4>2. Условия возврата</h4>
+                        <p>2.1. Возврат средств возможен в следующих случаях:</p>
+                        <ul>
+                            <li>Товар не был доставлен по техническим причинам</li>
+                            <li>Товар не соответствует описанию на сайте</li>
+                            <li>Обнаружены критические ошибки в файлах</li>
+                        </ul>
+                        
+                        <h4>3. Порядок возврата</h4>
+                        <p>3.1. Для оформления возврата необходимо:</p>
+                        <ul>
+                            <li>Написать на email: irashitov79@mail.ru</li>
+                            <li>Указать номер заказа и причину возврата</li>
+                            <li>Приложить доказательства (скриншоты, описание проблемы)</li>
+                        </ul>
+                        
+                        <h4>4. Сроки рассмотрения</h4>
+                        <p>4.1. Заявки на возврат рассматриваются в течение 3 рабочих дней.</p>
+                        <p>4.2. При положительном решении средства возвращаются в течение 10 рабочих дней.</p>
+                    </div>
+                `
+            }
+        };
+
+        function showLegalModal(type) {
+            const doc = LEGAL_DOCUMENTS[type];
+            if (doc) {
+                document.getElementById('legalModalTitle').textContent = doc.title;
+                document.getElementById('legalModalContent').innerHTML = doc.content;
+                document.getElementById('legalModal').style.display = 'flex';
+            }
+        }
+
+        function closeLegalModal() {
+            document.getElementById('legalModal').style.display = 'none';
+        }
+
+        // Функция для генерации микроразметки товаров
+        function generateProductStructuredData() {
+            const productsData = [];
+            
+            for (const [productId, productData] of Object.entries(PRODUCTS)) {
+                const productMarkup = {
+                    "@context": "https://schema.org/",
+                    "@type": "Product",
+                    "name": productData.name,
+                    "description": productData.description,
+                    "offers": {
+                        "@type": "Offer",
+                        "price": "100",
+                        "priceCurrency": "RUB",
+                        "availability": "https://schema.org/InStock"
+                    },
+                    "brand": {
+                        "@type": "Brand",
+                        "name": "FIXCAD MARKET"
+                    }
+                };
+                productsData.push(productMarkup);
+            }
+            
+            return productsData;
+        }
+
+        // Добавляем микроразметку при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            const productsData = generateProductStructuredData();
+            productsData.forEach(markup => {
+                const script = document.createElement('script');
+                script.type = 'application/ld+json';
+                script.textContent = JSON.stringify(markup);
+                document.head.appendChild(script);
+            });
+        });
+
         // Конфигурация
         const BACKEND_URL = 'https://fixcad.onrender.com';
         const PRODUCT_URLS = {
@@ -1190,5 +1464,30 @@
             }
         });
     </script>
+
+    <!-- Юридический футер -->
+    <div class="legal-footer">
+        <div class="legal-links">
+            <a href="#" onclick="showLegalModal('privacy')">Политика конфиденциальности</a>
+            <a href="#" onclick="showLegalModal('terms')">Пользовательское соглашение</a>
+            <a href="#" onclick="showLegalModal('refund')">Политика возвратов</a>
+        </div>
+        <div class="copyright">
+            © <span id="currentYear">2024</span> FIXCAD MARKET. Все права защищены. Компас® является зарегистрированным товарным знаком АСКОН.
+        </div>
+    </div>
+
+    <!-- Модальное окно для юридических документов -->
+    <div class="modal" id="legalModal">
+        <div class="modal-content" style="max-width: 800px; height: 80vh;">
+            <div class="modal-header">
+                <h3 id="legalModalTitle">Юридический документ</h3>
+                <button class="close-modal" onclick="closeLegalModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px; overflow-y: auto;">
+                <div id="legalModalContent"></div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
