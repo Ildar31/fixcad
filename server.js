@@ -388,8 +388,8 @@ app.post('/webhook/yoomoney', async (req, res) => {
     }
 
     // Проверка суммы
-    if (parseFloat(withdraw_amount) < 100) {
-      console.log('⏭️  Пропущено: сумма меньше 100 руб');
+    if (parseFloat(withdraw_amount) < 1) {
+      console.log('⏭️  Пропущено: сумма меньше 1 руб');
       return res.status(200).send('OK');
     }
 
