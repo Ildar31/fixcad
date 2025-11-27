@@ -667,7 +667,8 @@
                             <p style="margin-top: 8px; font-size: 12px;">
                                 <strong>Если окно оплаты не открылось автоматически:</strong><br>
                                 • Разрешите всплывающие окна для этого сайта<br>
-                                • Или нажмите на ссылку, которая появится после отправки формы
+                                • Или нажмите на ссылку, которая появится после отправки формы<br>
+                                • Окно заказа закроется автоматически через 3 секунды
                             </p>
                         </div>
 
@@ -883,6 +884,7 @@
             messageDiv.style.display = 'none';
             
             const formData = new FormData(this);
+            const customerEmail = formData.get('email');
             
             try {
                 // Отправляем данные на бэкенд
@@ -894,7 +896,7 @@
                     body: JSON.stringify({
                         product: formData.get('product'),
                         name: formData.get('name'),
-                        email: formData.get('email'),
+                        email: customerEmail,
                         phone: formData.get('phone'),
                         comment: formData.get('comment')
                     })
@@ -903,25 +905,23 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    // Если данные успешно отправлены, открываем оплату в новой вкладке
+                    // Создаем умную ссылку с email в label
+                    const smartPaymentUrl = `${PRODUCT_URLS[currentProduct]}_${encodeURIComponent(customerEmail)}`;
+                    
                     messageDiv.className = 'form-message success';
                     messageDiv.innerHTML = '✅ Данные отправлены! Открываем страницу оплаты...';
                     messageDiv.style.display = 'block';
                     
                     // Открываем оплату с обработкой блокировки всплывающих окон
                     setTimeout(() => {
-                        const paymentUrl = PRODUCT_URLS[currentProduct];
-                        
-                        // Пытаемся открыть в новом окне
-                        const newWindow = window.open(paymentUrl, '_blank', 'noopener,noreferrer');
+                        const newWindow = window.open(smartPaymentUrl, '_blank', 'noopener,noreferrer');
                         
                         if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
                             // Если всплывающее окно заблокировано - показываем инструкцию
-                            messageDiv.className = 'form-message error';
                             messageDiv.innerHTML = `
                                 ❌ Браузер заблокировал открытие окна оплаты.<br>
                                 <strong>Нажмите на ссылку ниже для перехода к оплате:</strong><br>
-                                <a href="${paymentUrl}" target="_blank" rel="noopener noreferrer" 
+                                <a href="${smartPaymentUrl}" target="_blank" rel="noopener noreferrer" 
                                    style="color: #FFD700; font-weight: bold; text-decoration: underline;">
                                     🔗 Перейти к оплате на ЮMoney
                                 </a>
@@ -929,12 +929,13 @@
                                 <small>После оплаты закройте вкладку ЮMoney и вернитесь на этот сайт</small>
                             `;
                             messageDiv.style.display = 'block';
-                            
-                            // Не закрываем модальное окно, чтобы пользователь видел ссылку
-                        } else {
-                            // Если окно открылось успешно - закрываем модальное окно
-                            document.getElementById('orderModal').style.display = 'none';
                         }
+                        
+                        // Закрываем модальное окно через 3 секунды в любом случае
+                        setTimeout(() => {
+                            document.getElementById('orderModal').style.display = 'none';
+                        }, 3000);
+                        
                     }, 1000);
                     
                 } else {

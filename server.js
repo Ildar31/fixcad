@@ -361,11 +361,10 @@ app.post('/api/order', async (req, res) => {
 // Webhook от ЮMoney - обрабатывает платежи и отправляет ссылку покупателю
 app.post('/webhook/yoomoney', async (req, res) => {
   try {
-    const { label, withdraw_amount, notification_type, email } = req.body;
+    const { label, withdraw_amount, notification_type } = req.body;
     
     console.log('📨 Получен webhook от ЮMoney:', { 
       label, 
-      email, 
       amount: withdraw_amount,
       notification_type
     });
@@ -386,29 +385,40 @@ app.post('/webhook/yoomoney', async (req, res) => {
       return res.status(200).send('OK');
     }
 
-    const product = PRODUCTS[label];
+    // Ищем email в label (формат: product_email)
+    let product, customerEmail;
     
-    if (!product) {
-      console.error('❌ Неизвестный товар:', label);
+    if (label.includes('_')) {
+      const parts = label.split('_');
+      product = parts[0]; // Первая часть - товар
+      customerEmail = decodeURIComponent(parts.slice(1).join('_')); // Остальное - email
+    } else {
+      // Старый формат без email
+      product = label;
+      customerEmail = '';
+    }
+
+    const productInfo = PRODUCTS[product];
+    
+    if (!productInfo) {
+      console.error('❌ Неизвестный товар:', product);
       return res.status(200).send('OK');
     }
 
-    // ПОЛУЧАЕМ EMAIL ИЗ РАЗНЫХ ПОЛЕЙ
-    const customerEmail = email || req.body.sender || '';
-    
     if (!customerEmail) {
-      console.error('❌ Email не указан в webhook');
+      console.error('❌ Email не указан в label:', label);
       // Отправляем уведомление вам для ручной отправки
       await transporter.sendMail({
         from: `"FIXCAD MARKET - Проблема" <${process.env.EMAIL_USER}>`,
         to: process.env.EMAIL_USER,
-        subject: `❌ Платеж получен, но email не указан: ${product.name}`,
+        subject: `❌ Платеж получен, но email не указан: ${productInfo.name}`,
         html: `
-          <p>Платеж получен, но email покупателя не указан в webhook.</p>
-          <p><strong>Товар:</strong> ${product.name}</p>
+          <p>Платеж получен, но email покупателя не указан в label.</p>
+          <p><strong>Товар:</strong> ${productInfo.name}</p>
           <p><strong>Сумма:</strong> ${withdraw_amount} руб.</p>
           <p><strong>Label:</strong> ${label}</p>
-          <p><strong>Ссылка для ручной отправки:</strong> ${product.zipUrl}</p>
+          <p><strong>Ссылка для ручной отправки:</strong> ${productInfo.zipUrl}</p>
+          <p><strong>Время:</strong> ${new Date().toLocaleString('ru-RU')}</p>
         `
       });
       return res.status(200).send('OK');
@@ -418,15 +428,15 @@ app.post('/webhook/yoomoney', async (req, res) => {
     await transporter.sendMail({
       from: `"FIXCAD MARKET" <${process.env.EMAIL_USER}>`,
       to: customerEmail,
-      subject: `✅ Оплата получена! Ваш заказ: ${product.name} - FIXCAD MARKET`,
-      html: generateEmailHTML(product)
+      subject: `✅ Оплата получена! Ваш заказ: ${productInfo.name} - FIXCAD MARKET`,
+      html: generateEmailHTML(productInfo)
     });
 
     // Также отправляем уведомление вам
     await transporter.sendMail({
       from: `"FIXCAD MARKET - Платежи" <${process.env.EMAIL_USER}>`,
       to: process.env.EMAIL_USER,
-      subject: `💳 Оплата получена: ${product.name}`,
+      subject: `💳 Оплата получена: ${productInfo.name}`,
       html: `
         <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
           <div style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
@@ -435,12 +445,15 @@ app.post('/webhook/yoomoney', async (req, res) => {
           <div style="background: #f8f9fa; padding: 20px; border-radius: 0 0 10px 10px;">
             <div style="background: white; padding: 15px; margin: 15px 0; border-radius: 8px;">
               <h3>✅ Платеж подтвержден</h3>
-              <p><strong>Товар:</strong> ${product.name}</p>
+              <p><strong>Товар:</strong> ${productInfo.name}</p>
               <p><strong>Покупатель:</strong> ${customerEmail}</p>
               <p><strong>Сумма:</strong> ${withdraw_amount} руб.</p>
               <p><strong>Тип платежа:</strong> ${notification_type}</p>
               <p><strong>Время:</strong> ${new Date().toLocaleString('ru-RU')}</p>
             </div>
+            <p style="text-align: center; color: #666;">
+              Ссылка для скачивания отправлена покупателю автоматически.
+            </p>
           </div>
         </div>
       `
