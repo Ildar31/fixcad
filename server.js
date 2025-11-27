@@ -367,8 +367,7 @@ app.post('/webhook/yoomoney', async (req, res) => {
       label, 
       email, 
       amount: withdraw_amount,
-      notification_type,
-      fullBody: req.body
+      notification_type
     });
     
     // Обработка тестового уведомления от ЮMoney
@@ -381,15 +380,9 @@ app.post('/webhook/yoomoney', async (req, res) => {
       });
     }
     
-    // Проверка типа уведомления
-    if (notification_type !== 'p2p-incoming') {
-      console.log('⏭️  Пропущено: не входящий платеж');
-      return res.status(200).send('OK');
-    }
-
-    // Проверка суммы
-    if (parseFloat(withdraw_amount) < 1) {
-      console.log('⏭️  Пропущено: сумма меньше 1 руб');
+    // ПРОВЕРКА ТИПА УВЕДОМЛЕНИЯ - принимаем ВСЕ входящие платежи
+    if (!notification_type.includes('incoming')) {
+      console.log('⏭️  Пропущено: не входящий платеж', notification_type);
       return res.status(200).send('OK');
     }
 
@@ -400,52 +393,60 @@ app.post('/webhook/yoomoney', async (req, res) => {
       return res.status(200).send('OK');
     }
 
-    if (!email) {
-      console.error('❌ Email не указан');
+    // ПОЛУЧАЕМ EMAIL ИЗ РАЗНЫХ ПОЛЕЙ
+    const customerEmail = email || req.body.sender || '';
+    
+    if (!customerEmail) {
+      console.error('❌ Email не указан в webhook');
+      // Отправляем уведомление вам для ручной отправки
+      await transporter.sendMail({
+        from: `"FIXCAD MARKET - Проблема" <${process.env.EMAIL_USER}>`,
+        to: process.env.EMAIL_USER,
+        subject: `❌ Платеж получен, но email не указан: ${product.name}`,
+        html: `
+          <p>Платеж получен, но email покупателя не указан в webhook.</p>
+          <p><strong>Товар:</strong> ${product.name}</p>
+          <p><strong>Сумма:</strong> ${withdraw_amount} руб.</p>
+          <p><strong>Label:</strong> ${label}</p>
+          <p><strong>Ссылка для ручной отправки:</strong> ${product.zipUrl}</p>
+        `
+      });
       return res.status(200).send('OK');
     }
 
     // ОТПРАВЛЯЕМ письмо со ссылкой для скачивания покупателю
     await transporter.sendMail({
       from: `"FIXCAD MARKET" <${process.env.EMAIL_USER}>`,
-      to: email,
+      to: customerEmail,
       subject: `✅ Оплата получена! Ваш заказ: ${product.name} - FIXCAD MARKET`,
       html: generateEmailHTML(product)
     });
 
-    // Также отправляем уведомление вам о successful payment
+    // Также отправляем уведомление вам
     await transporter.sendMail({
       from: `"FIXCAD MARKET - Платежи" <${process.env.EMAIL_USER}>`,
       to: process.env.EMAIL_USER,
       subject: `💳 Оплата получена: ${product.name}`,
       html: `
-        <!DOCTYPE html>
-        <html>
-        <head><meta charset="UTF-8"></head>
-        <body>
-          <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
-            <div style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
-              <h1>💳 Оплата получена!</h1>
-            </div>
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 0 0 10px 10px;">
-              <div style="background: white; padding: 15px; margin: 15px 0; border-radius: 8px;">
-                <h3>✅ Платеж подтвержден</h3>
-                <p><strong>Товар:</strong> ${product.name}</p>
-                <p><strong>Покупатель:</strong> ${email}</p>
-                <p><strong>Сумма:</strong> ${withdraw_amount} руб.</p>
-                <p><strong>Время:</strong> ${new Date().toLocaleString('ru-RU')}</p>
-              </div>
-              <p style="text-align: center; color: #666;">
-                Ссылка для скачивания отправлена покупателю автоматически.
-              </p>
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+          <div style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1>💳 Оплата получена!</h1>
+          </div>
+          <div style="background: #f8f9fa; padding: 20px; border-radius: 0 0 10px 10px;">
+            <div style="background: white; padding: 15px; margin: 15px 0; border-radius: 8px;">
+              <h3>✅ Платеж подтвержден</h3>
+              <p><strong>Товар:</strong> ${product.name}</p>
+              <p><strong>Покупатель:</strong> ${customerEmail}</p>
+              <p><strong>Сумма:</strong> ${withdraw_amount} руб.</p>
+              <p><strong>Тип платежа:</strong> ${notification_type}</p>
+              <p><strong>Время:</strong> ${new Date().toLocaleString('ru-RU')}</p>
             </div>
           </div>
-        </body>
-        </html>
+        </div>
       `
     });
 
-    console.log(`✅ Письмо со ссылкой отправлено покупателю на ${email}`);
+    console.log(`✅ Письмо со ссылкой отправлено покупателю на ${customerEmail}`);
     console.log(`✅ Уведомление об оплате отправлено вам`);
 
     res.status(200).send('OK');
