@@ -903,25 +903,14 @@
                     messageDiv.innerHTML = '✅ Данные отправлены! Открываем страницу оплаты...';
                     messageDiv.style.display = 'block';
                     
-                    // Открываем оплату в НОВОМ ОКНЕ с полным разрывом связи
+                    // Открываем оплату в новой вкладке с полным разрывом связи
                     setTimeout(() => {
-                        // Создаем временную ссылку
-                        const tempLink = document.createElement('a');
-                        tempLink.href = PRODUCT_URLS[currentProduct];
-                        tempLink.target = '_blank';
-                        tempLink.rel = 'noopener noreferrer'; // Важно!
-                        
-                        // Программно кликаем по ссылке
-                        const clickEvent = new MouseEvent('click', {
-                            view: window,
-                            bubbles: true,
-                            cancelable: true
-                        });
-                        tempLink.dispatchEvent(clickEvent);
-                        
-                        document.getElementById('orderModal').style.display = 'none';
-                    }, 1000);
-                        
+                        // Создаем новое окно и сразу убиваем все связи
+                        const newWindow = window.open('', '_blank');
+                        if (newWindow) {
+                            newWindow.opener = null;
+                            newWindow.location.href = PRODUCT_URLS[currentProduct];
+                        }
                         document.getElementById('orderModal').style.display = 'none';
                     }, 1000);
                     
