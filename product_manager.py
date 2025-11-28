@@ -175,6 +175,8 @@ class ProductManager:
         list_buttons_frame = ttk.Frame(list_frame)
         list_buttons_frame.grid(row=1, column=0, columnspan=2, pady=10)
         
+        ttk.Button(list_buttons_frame, text="▲ Вверх", command=self.move_up).pack(side=tk.LEFT, padx=2)
+        ttk.Button(list_buttons_frame, text="▼ Вниз", command=self.move_down).pack(side=tk.LEFT, padx=2)
         ttk.Button(list_buttons_frame, text="Дублировать", command=self.duplicate_product).pack(side=tk.LEFT, padx=5)
         ttk.Button(list_buttons_frame, text="Удалить", command=self.delete_product).pack(side=tk.LEFT, padx=5)
         
@@ -316,10 +318,11 @@ class ProductManager:
         self.refresh_tree()
 
     def refresh_tree(self):
-        """Обновляет дерево товаров"""
+        """Обновляет дерево товаров с сохранением порядка"""
         for item in self.tree.get_children():
             self.tree.delete(item)
             
+        # Сохраняем порядок из словаря products
         for product_id, product_data in self.products.items():
             formats = ", ".join(product_data.get('formats', []))
             has_3d = "✅" if product_data.get('has_3d', False) else "❌"
@@ -761,6 +764,66 @@ class ProductManager:
         self.update_server_js()
         self.update_index_html()
         messagebox.showinfo("Успех", "Оба файла успешно обновлены!")
+
+    def move_up(self):
+        """Перемещает выбранный товар вверх"""
+        selection = self.tree.selection()
+        if not selection:
+            return
+            
+        current_index = self.tree.index(selection[0])
+        if current_index == 0:
+            return
+        
+        # Получаем список всех товаров в порядке отображения
+        product_ids = list(self.products.keys())
+        
+        # Меняем местами текущий товар с предыдущим
+        product_ids[current_index], product_ids[current_index - 1] = product_ids[current_index - 1], product_ids[current_index]
+        
+        # Создаем новый упорядоченный словарь
+        new_products = {}
+        for pid in product_ids:
+            new_products[pid] = self.products[pid]
+        
+        self.products = new_products
+        self.refresh_tree()
+        
+        # Выделяем перемещенный товар
+        items = self.tree.get_children()
+        if items and current_index - 1 < len(items):
+            self.tree.selection_set(items[current_index - 1])
+
+    def move_down(self):
+        """Перемещает выбранный товар вниз"""
+        selection = self.tree.selection()
+        if not selection:
+            return
+            
+        current_index = self.tree.index(selection[0])
+        items = self.tree.get_children()
+        
+        if current_index == len(items) - 1:
+            return
+        
+        # Получаем список всех товаров в порядке отображения
+        product_ids = list(self.products.keys())
+        
+        # Меняем местами текущий товар со следующим
+        product_ids[current_index], product_ids[current_index + 1] = product_ids[current_index + 1], product_ids[current_index]
+        
+        # Создаем новый упорядоченный словарь
+        new_products = {}
+        for pid in product_ids:
+            new_products[pid] = self.products[pid]
+        
+        self.products = new_products
+        self.refresh_tree()
+        
+        # Выделяем перемещенный товар
+        items = self.tree.get_children()
+        if items and current_index + 1 < len(items):
+            self.tree.selection_set(items[current_index + 1])
 
 def main():
     root = tk.Tk()

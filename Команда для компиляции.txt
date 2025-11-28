@@ -1,0 +1,1 @@
+pyinstaller --onefile --windowed --name "FIXCAD_Product_Manager" product_manager.py

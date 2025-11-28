@@ -12,18 +12,6 @@ app.use(require('cors')());
 // ВАШИ ССЫЛКИ С ЯНДЕКС.ДИСКА
 // ============================================
 const PRODUCTS = {
-  stend: {
-    name: 'Стенд для пакеров',
-    description: 'Полный комплект чертежей и 3D модель',
-    zipUrl: 'https://disk.yandex.ru/d/yavUz8k9ce2gAw/download',
-    zipName: 'stend.zip',
-    contents: [
-      'Чертежи КОМПАС',
-      '3D модели КОМПАС',
-      'Спецификации',
-      'Паспорт, РЭ'
-    ]
-  },
   stapel: {
     name: 'Стапель сварочный 3х12 м',
     description: 'Комплект чертежей + 3D модель',
@@ -45,6 +33,18 @@ const PRODUCTS = {
       'Спецификация',
       'Таблица сварных соединений',
       'Технические требования'
+    ]
+  },
+  stend: {
+    name: 'Стенд для пакеров',
+    description: 'Полный комплект чертежей и 3D модель',
+    zipUrl: 'https://disk.yandex.ru/d/yavUz8k9ce2gAw/download',
+    zipName: 'stend.zip',
+    contents: [
+      'Чертежи КОМПАС',
+      '3D модели КОМПАС',
+      'Спецификации',
+      'Паспорт, РЭ'
     ]
   },
 };
