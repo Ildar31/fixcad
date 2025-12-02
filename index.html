@@ -7,7 +7,7 @@
 
     <!-- SEO и мета-теги -->
     <meta name="description" content="FIXCAD MARKET - профессиональные чертежи, 3D-модели КОМПАС, инженерная документация, программы и утилиты для конструкторов. Готовые решения для проектирования, макросы, автоматизация расчетов, ГОСТ-документация.">
-    <meta name="keywords" content="чертежи КОМПАС 3D, 3D модели, CAD проектирование, инженерные чертежи, конструкторская документация, ГОСТ чертежи, программы для конструкторов, макросы, автоматизация проектирования">
+    <meta name="keywords" content="чертежи КОМПАС 3D, 3D модели, CAD проектирование, инженерные чертежи, конструкторская документация, ГОСТ чертежи, сборочные чертежи, спецификации, технические требования, программы для конструкторов, утилиты КОМПАС, макросы, автоматизация проектирования, Excel расчеты, инженерные расчеты, проектная документация, машиностроительные чертежи, промышленное оборудование, технологическая оснастка, стапели, кондукторы, приспособления, средства механизации, гидравлические системы, пневматические схемы, электрические схемы, сварные конструкции, металлоконструкции, детали машин, узлы оборудования, редукторы, приводы, передачи, валы, подшипниковые узлы, корпусные детали, листовые конструкции, рамные конструкции, пространственные конструкции, КД, ЭД, ТД, проектировщику, конструктору, технологу, инженеру-проектировщику, главному конструктору, руководителю проекта">
     <meta name="author" content="FIXCAD MARKET">
 
     <!-- Open Graph -->
@@ -21,10 +21,6 @@
 
     <!-- Google Search Console -->
     <meta name="google-site-verification" content="ваш_код_верификации">
-
-    <!-- Предзагрузка критичных ресурсов -->
-    <link rel="preload" href="images/logo.png" as="image">
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" as="script">
 
     <!-- Яндекс.Метрика -->
     <script type="text/javascript">
@@ -72,6 +68,7 @@
     }
     </script>
 
+    <!-- Дополнительные структурированные данные -->
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
@@ -136,6 +133,21 @@
     }
     </script>
 
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "FIXCAD MARKET",
+        "description": "Магазин чертежей и 3D-моделей КОМПАС",
+        "url": "https://fixcad.ru",
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://fixcad.ru/search?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+        }
+    }
+    </script>
+
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="images/favicon.ico">
     <link rel="icon" type="image/png" href="images/favicon.png">
@@ -146,20 +158,6 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
-        :root {
-            --primary-color: #667eea;
-            --secondary-color: #764ba2;
-            --accent-color: #4CAF50;
-            --danger-color: #e74c3c;
-            --warning-color: #ffc107;
-            --success-color: #28a745;
-            --dark-color: #2c3e50;
-            --light-color: #f8f9fa;
-            --gray-color: #6c757d;
-            --shadow: 0 10px 30px rgba(0,0,0,0.2);
-            --transition: all 0.3s ease;
-        }
-        
         * {
             margin: 0;
             padding: 0;
@@ -173,9 +171,7 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%) fixed;
-            background-size: cover;
-            background-attachment: fixed;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
         }
         
@@ -196,7 +192,7 @@
             margin: 10px 0;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             cursor: pointer;
-            transition: var(--transition);
+            transition: all 0.3s ease;
             border: 2px solid rgba(255,255,255,0.3);
             position: relative;
             overflow: hidden;
@@ -219,7 +215,7 @@
             background: white;
             border-radius: 15px;
             padding: 25px;
-            box-shadow: var(--shadow);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             text-align: center;
             will-change: transform;
@@ -233,7 +229,7 @@
         .product-image {
             width: 100%;
             height: 200px;
-            background: var(--light-color);
+            background: #f8f9fa;
             border-radius: 10px;
             margin-bottom: 15px;
             display: flex;
@@ -271,7 +267,7 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            background: var(--primary-color);
+            background: #667eea;
             color: white;
             padding: 3px 8px;
             border-radius: 10px;
@@ -282,7 +278,7 @@
             font-size: 1.3em;
             font-weight: bold;
             margin-bottom: 10px;
-            color: var(--dark-color);
+            color: #2c3e50;
         }
         
         .product-description {
@@ -328,7 +324,7 @@
         .buy-button {
             display: block;
             width: 100%;
-            background: linear-gradient(45deg, var(--accent-color), #45a049);
+            background: linear-gradient(45deg, #4CAF50, #45a049);
             color: white;
             text-decoration: none;
             padding: 12px;
@@ -336,20 +332,15 @@
             font-weight: bold;
             font-size: 1em;
             text-align: center;
-            transition: var(--transition);
+            transition: all 0.3s ease;
             border: none;
             cursor: pointer;
             margin-top: 10px;
         }
         
         .buy-button:hover {
-            background: linear-gradient(45deg, #45a049, var(--accent-color));
+            background: linear-gradient(45deg, #45a049, #4CAF50);
             transform: scale(1.02);
-        }
-        
-        .buy-button:focus {
-            outline: 2px solid var(--primary-color);
-            outline-offset: 2px;
         }
         
         .footer {
@@ -445,10 +436,6 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         
-        .image-controls button:focus {
-            outline: 2px solid var(--primary-color);
-        }
-        
         .zoom-info {
             position: absolute;
             top: 10px;
@@ -474,21 +461,6 @@
             background: none;
             border: none;
             padding: 5px;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: var(--transition);
-        }
-        
-        .close-modal:hover {
-            background: rgba(0,0,0,0.1);
-        }
-        
-        .close-modal:focus {
-            outline: 2px solid var(--primary-color);
         }
         
         .model-controls {
@@ -508,10 +480,6 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 12px;
-        }
-        
-        .model-controls button:focus {
-            outline: 2px solid var(--primary-color);
         }
         
         .loading {
@@ -536,16 +504,16 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: var(--dark-color);
+            color: #2c3e50;
             font-size: 14px;
         }
         
         .form-label .required {
-            color: var(--danger-color);
+            color: #e74c3c;
         }
         
         .form-label .optional {
-            color: var(--gray-color);
+            color: #7f8c8d;
             font-size: 12px;
             font-weight: normal;
         }
@@ -556,18 +524,18 @@
             border: 2px solid #e9ecef;
             border-radius: 8px;
             font-size: 14px;
-            transition: var(--transition);
+            transition: all 0.3s ease;
             background: white;
         }
         
         .form-input:focus {
             outline: none;
-            border-color: var(--primary-color);
+            border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
         
         .form-input.error {
-            border-color: var(--danger-color);
+            border-color: #e74c3c;
         }
         
         .form-textarea {
@@ -576,7 +544,7 @@
             border: 2px solid #e9ecef;
             border-radius: 8px;
             font-size: 14px;
-            transition: var(--transition);
+            transition: all 0.3s ease;
             background: white;
             resize: vertical;
             min-height: 80px;
@@ -585,7 +553,7 @@
         
         .form-textarea:focus {
             outline: none;
-            border-color: var(--primary-color);
+            border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
         
@@ -593,24 +561,24 @@
             display: block;
             margin-top: 5px;
             font-size: 12px;
-            color: var(--gray-color);
+            color: #6c757d;
         }
         
         .form-help.error {
-            color: var(--danger-color);
+            color: #e74c3c;
         }
         
         .product-summary {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
             padding: 20px;
             border-radius: 10px;
             margin-bottom: 25px;
-            border-left: 4px solid var(--primary-color);
+            border-left: 4px solid #667eea;
         }
         
         .product-summary h4 {
             margin: 0 0 10px 0;
-            color: var(--dark-color);
+            color: #2c3e50;
             font-size: 16px;
         }
         
@@ -621,7 +589,7 @@
         
         .warning-box {
             background: #fff3cd;
-            border: 2px solid var(--warning-color);
+            border: 2px solid #ffc107;
             padding: 15px;
             border-radius: 8px;
             margin: 20px 0;
@@ -644,33 +612,28 @@
         .submit-button {
             width: 100%;
             padding: 15px;
-            background: linear-gradient(45deg, var(--accent-color), #45a049);
+            background: linear-gradient(45deg, #4CAF50, #45a049);
             color: white;
             border: none;
             border-radius: 8px;
             font-weight: bold;
             font-size: 16px;
             cursor: pointer;
-            transition: var(--transition);
+            transition: all 0.3s ease;
             margin-top: 10px;
         }
         
         .submit-button:hover {
-            background: linear-gradient(45deg, #45a049, var(--accent-color));
+            background: linear-gradient(45deg, #45a049, #4CAF50);
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
         }
         
         .submit-button:disabled {
-            background: var(--gray-color);
+            background: #6c757d;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
-        }
-        
-        .submit-button:focus {
-            outline: 2px solid var(--primary-color);
-            outline-offset: 2px;
         }
         
         .form-message {
@@ -747,7 +710,7 @@
         }
         
         .commission-header {
-            background: linear-gradient(145deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            background: linear-gradient(145deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 20px 25px;
             display: flex;
@@ -768,7 +731,7 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: var(--transition);
+            transition: all 0.3s ease;
             font-size: 1.3em;
             backdrop-filter: blur(5px);
             box-shadow: 
@@ -804,17 +767,11 @@
             font-size: 14px;
             border-bottom: 1px dashed #FFD700;
             cursor: pointer;
-            transition: var(--transition);
         }
         
         .legal-links a:hover {
             color: white;
             border-bottom-color: white;
-        }
-        
-        .legal-links a:focus {
-            outline: none;
-            text-decoration: underline;
         }
         
         .copyright {
@@ -830,7 +787,7 @@
         }
         
         .legal-content h4 {
-            color: var(--dark-color);
+            color: #2c3e50;
             margin: 20px 0 10px 0;
             border-bottom: 1px solid #eee;
             padding-bottom: 5px;
@@ -849,40 +806,6 @@
             margin-bottom: 8px;
         }
         
-        /* Стили для кликабельных баннеров */
-        .guarantee-item.clickable-banner {
-            cursor: pointer;
-            transition: var(--transition);
-            position: relative;
-            overflow: hidden;
-            background: rgba(255, 255, 255, 0.9);
-        }
-
-        .guarantee-item.clickable-banner:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-        }
-        
-        .guarantee-item.clickable-banner:focus {
-            outline: 2px solid var(--primary-color);
-        }
-        
-        /* Баннер разработки */
-        .dev-banner {
-            background: #ff6b35;
-            color: white;
-            padding: 10px;
-            text-align: center;
-            font-weight: bold;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        }
-        
-        /* Адаптивность */
         @media (max-width: 768px) {
             .order-modal-content {
                 max-height: 90vh;
@@ -903,26 +826,12 @@
                 padding: 10px 20px;
             }
             
-            .products-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .guarantee {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .guarantee-item {
-                width: 100%;
-                max-width: 300px;
+            .header .price-badge::before {
+                display: none;
             }
         }
         
         @media (max-width: 480px) {
-            body {
-                padding: 10px;
-            }
-            
             .order-modal-body {
                 padding: 15px;
             }
@@ -935,87 +844,51 @@
             
             .commission-header {
                 padding: 15px 20px;
-                flex-direction: column;
-                gap: 10px;
-                text-align: center;
             }
             
             .guarantee-item {
                 min-width: 100px;
                 padding: 10px;
             }
-            
-            .header h1 {
-                font-size: 1.5em;
-            }
-            
-            .header h1 img {
-                height: 50px;
-            }
-        }
-        
-        @media (max-width: 320px) {
-            .product-card {
-                padding: 15px;
-            }
-            
-            .product-title {
-                font-size: 1.1em;
-            }
-            
-            .buy-button {
-                padding: 10px;
-                font-size: 0.9em;
-            }
-            
-            .legal-links {
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .legal-links a {
-                margin: 0;
-            }
         }
     </style>
 </head>
 <body>
 
-    <div class="dev-banner">
+    <div style="background: #ff6b35; color: white; padding: 10px; text-align: center; font-weight: bold; position: fixed; top: 0; left: 0; right: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
         🚧 Сайт находится в разработке. Некоторые функции могут быть недоступны. 🚧
     </div>
 
     <div class="header" style="margin-top: 50px;">
         <h1>
-            <img src="images/logo.png" alt="FIXCAD MARKET логотип" style="height: 72px; vertical-align: middle;">
-            FIXCAD MARKET — чертежи и 3D-модели Компас&reg;
+            <img src="images/logo.png" alt="FIXCAD MARKET" style="height: 72px; vertical-align: middle;">
+            FIXCAD MARKET — чертежи и 3D-модели Компас<sup style="font-size: 0.5em;">®</sup>
         </h1>
-        <button class="price-badge" onclick="showCommissionModal()" aria-label="Все товары по 100 рублей">
+        <div class="price-badge" onclick="showCommissionModal()">
             ВСЕ товары по 100 рублей!
-        </button>
+        </div>
         <p>Качественные файлы для конструкторов и проектировщиков</p>
     </div>
 
     <div class="guarantee">
-        <div class="guarantee-item clickable-banner" onclick="showContentModal('instant-delivery.html', 'Мгновенная доставка')" tabindex="0" role="button" aria-label="Мгновенная доставка">
-            <div style="font-size: 1.8em;" aria-hidden="true">⚡</div>
+        <div class="guarantee-item">
+            <div style="font-size: 1.8em;">⚡</div>
             <div>Мгновенная доставка</div>
         </div>
-        <div class="guarantee-item clickable-banner" onclick="showContentModal('quality-guarantee.html', 'Гарантия качества')" tabindex="0" role="button" aria-label="Гарантия качества">
-            <div style="font-size: 1.8em;" aria-hidden="true">🛡️</div>
+        <div class="guarantee-item">
+            <div style="font-size: 1.8em;">🛡️</div>
             <div>Гарантия качества</div>
         </div>
-        <div class="guarantee-item clickable-banner" onclick="showContentModal('support-24-7.html', 'Поддержка 24/7')" tabindex="0" role="button" aria-label="Поддержка 24/7">
-            <div style="font-size: 1.8em;" aria-hidden="true">💬</div>
+        <div class="guarantee-item">
+            <div style="font-size: 1.8em;">💬</div>
             <div>Поддержка 24/7</div>
         </div>
     </div>
 
     <div class="products-grid">
         <div class="product-card">
-            <div class="product-image" data-image="images/stend.png" data-model="models/stend.stl" role="button" tabindex="0" aria-label="Просмотреть изображение стенда для пакеров">
-                <img src="images/stend.png" alt="Стенд для пакеров - 3D модель и чертежи">
+            <div class="product-image" data-image="images/stend.png" data-model="models/stend.stl">
+                <img src="images/stend.png" alt="Стенд для пакеров">
                 <div class="format-badge">STL</div>
                 <div class="model-indicator">3D просмотр</div>
             </div>
@@ -1027,14 +900,14 @@
             <ul class="product-features">
                 <li>Чертежи КОМПАС</li><li>3D модели КОМПАС</li><li>Спецификации</li><li>Паспорт, РЭ</li>
             </ul>
-            <button class="buy-button" data-product="stend" aria-label="Купить стенд для пакеров за 100 рублей">
+            <button class="buy-button" data-product="stend">
                 Купить за 100 руб.
             </button>
         </div>
 
         <div class="product-card">
-            <div class="product-image" data-image="images/stapel.png" data-model="models/stapel.stl" role="button" tabindex="0" aria-label="Просмотреть изображение сварочного стапеля">
-                <img src="images/stapel.png" alt="Стапель сварочный 3х12 м - чертежи и 3D модель">
+            <div class="product-image" data-image="images/stapel.png" data-model="models/stapel.stl">
+                <img src="images/stapel.png" alt="Стапель сварочный 3х12 м">
                 <div class="format-badge">STL</div>
                 <div class="model-indicator">3D просмотр</div>
             </div>
@@ -1046,14 +919,14 @@
             <ul class="product-features">
                 <li>Чертежи КОМПАС</li><li>3D модели КОМПАС</li><li>Спецификации</li>
             </ul>
-            <button class="buy-button" data-product="stapel" aria-label="Купить сварочный стапель за 100 рублей">
+            <button class="buy-button" data-product="stapel">
                 Купить за 100 руб.
             </button>
         </div>
 
         <div class="product-card">
-            <div class="product-image" data-image="images/level.png" role="button" tabindex="0" aria-label="Просмотреть изображение механического уровнемера">
-                <img src="images/level.png" alt="Уровнемер механический - чертеж">
+            <div class="product-image" data-image="images/level.png" >
+                <img src="images/level.png" alt="Уровнемер механический">
                 <div class="format-badge">CDW</div>
                 <div class="model-indicator">Изображение</div>
             </div>
@@ -1065,7 +938,7 @@
             <ul class="product-features">
                 <li>Сборочный чертеж</li><li>Спецификация</li><li>Таблица сварных соединений</li><li>Технические требования</li>
             </ul>
-            <button class="buy-button" data-product="level" aria-label="Купить механический уровнемер за 100 рублей">
+            <button class="buy-button" data-product="level">
                 Купить за 100 руб.
             </button>
         </div>
@@ -1076,7 +949,7 @@
         <div class="modal-content order-modal-content">
             <div class="modal-header">
                 <h3 style="margin:0;">Оформление заказа</h3>
-                <button class="close-modal" id="closeOrderModal" aria-label="Закрыть окно заказа">&times;</button>
+                <button class="close-modal" id="closeOrderModal">&times;</button>
             </div>
             <div class="modal-body order-modal-body">
                 <div class="form-container">
@@ -1101,38 +974,38 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label" for="customerName">
+                            <label class="form-label">
                                 ФИО <span class="required">*</span>
                             </label>
                             <input type="text" class="form-input" id="customerName" name="name" required 
-                                   placeholder="Иванов Иван Иванович" autocomplete="name">
+                                   placeholder="Иванов Иван Иванович">
                             <span class="form-help">Укажите ваше полное имя для связи</span>
                         </div>
                         
                         <div class="form-group">
-                            <label class="form-label" for="customerEmail">
+                            <label class="form-label">
                                 Email <span class="required">*</span>
                             </label>
                             <input type="email" class="form-input" id="customerEmail" name="email" required 
-                                   placeholder="your@email.com" autocomplete="email">
+                                   placeholder="your@email.com">
                             <span class="form-help">На этот адрес будет отправлена ссылка для скачивания</span>
                         </div>
                         
                         <div class="form-group">
-                            <label class="form-label" for="customerPhone">
+                            <label class="form-label">
                                 Телефон <span class="optional">(необязательно)</span>
                             </label>
                             <input type="tel" class="form-input" id="customerPhone" name="phone" 
-                                   placeholder="+7 (999) 123-45-67" autocomplete="tel">
+                                   placeholder="+7 (999) 123-45-67">
                             <span class="form-help">Для экстренной связи в случае проблем с доставкой</span>
                         </div>
                         
                         <div class="form-group">
-                            <label class="form-label" for="customerComment">
+                            <label class="form-label">
                                 Комментарий к заказу <span class="optional">(необязательно)</span>
                             </label>
                             <textarea class="form-textarea" id="customerComment" name="comment" 
-                                      placeholder="Дополнительные пожелания или вопросы..." rows="3"></textarea>
+                                      placeholder="Дополнительные пожелания или вопросы..."></textarea>
                             <span class="form-help">Любая дополнительная информация по вашему заказу</span>
                         </div>
                         
@@ -1152,54 +1025,52 @@
         <div class="commission-modal-content">
             <div class="commission-header">
                 <h3 style="margin:0; color:white;">Оплата на fixcad.ru: легко и просто</h3>
-                <button class="close-modal" onclick="closeCommissionModal()" aria-label="Закрыть окно">&times;</button>
+                <button class="close-modal" onclick="closeCommissionModal()">&times;</button>
             </div>
             <div class="commission-modal-body">
-                <iframe src="vozvrat-komissii.html" class="commission-iframe" title="Статья о возврате комиссии" loading="lazy"></iframe>
+                <iframe src="vozvrat-komissii.html" class="commission-iframe" title="Статья о возврате комиссии"></iframe>
             </div>
         </div>
     </div>
 
-    <!-- Модальное окно для просмотра изображений -->
+    <!-- Остальные модальные окна (просмотр изображений и 3D моделей) -->
     <div class="modal" id="imageModal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 style="margin:0;">Просмотр изображения</h3>
-                <button class="close-modal" id="closeImageModal" aria-label="Закрыть окно просмотра изображения">&times;</button>
+                <button class="close-modal" id="closeImageModal">&times;</button>
             </div>
             <div class="modal-body">
                 <img id="modalImage" src="" alt="">
                 <div class="zoom-info" id="zoomInfo">100%</div>
                 <div class="image-controls">
-                    <button onclick="zoomIn()" aria-label="Увеличить">+ Увеличить</button>
-                    <button onclick="zoomOut()" aria-label="Уменьшить">- Уменьшить</button>
-                    <button onclick="resetZoom()" aria-label="Сбросить масштаб">Сброс</button>
+                    <button onclick="zoomIn()">+ Увеличить</button>
+                    <button onclick="zoomOut()">- Уменьшить</button>
+                    <button onclick="resetZoom()">Сброс</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Модальное окно для 3D просмотра -->
     <div class="modal" id="modelModal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 style="margin:0;color:#333;">3D просмотр модели</h3>
-                <button class="close-modal" id="closeModelModal" aria-label="Закрыть окно 3D просмотра">&times;</button>
+                <button class="close-modal" id="closeModelModal">&times;</button>
             </div>
             <div class="modal-body">
                 <div id="modelContainer">
                     <div class="loading">Загрузка 3D модели...</div>
                 </div>
                 <div class="model-controls">
-                    <button onclick="rotateModel()" aria-label="Вращать модель">Вращать</button>
-                    <button onclick="resetModel()" aria-label="Сбросить вид модели">Сброс</button>
-                    <button onclick="toggleWireframe()" aria-label="Переключить каркасный вид">Каркас</button>
+                    <button onclick="rotateModel()">Вращать</button>
+                    <button onclick="resetModel()">Сброс</button>
+                    <button onclick="toggleWireframe()">Каркас</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Основной футер -->
     <div class="footer">
         <p><strong>Форматы из КОМПАС-3D:</strong> CDW, SPW, A3D, M3D, DXF, STEP, IGES, STL, PDF</p>
         <p>Связь и вопросы: 
@@ -1210,66 +1081,16 @@
         </p>
     </div>
 
-    <!-- Юридический футер -->
-    <div class="legal-footer">
-        <div class="legal-links">
-            <a href="#" onclick="showLegalModal('privacy')">Политика конфиденциальности</a>
-            <a href="#" onclick="showLegalModal('terms')">Пользовательское соглашение</a>
-            <a href="#" onclick="showLegalModal('refund')">Политика возвратов</a>
-        </div>
-        <div class="copyright">
-            © <span id="currentYear">2024</span> FIXCAD MARKET. Все права защищены. Компас&reg; является зарегистрированным товарным знаком АСКОН.
-        </div>
-    </div>
-
-    <!-- Модальное окно для юридических документов -->
-    <div class="modal" id="legalModal">
-        <div class="modal-content" style="max-width: 800px; height: 80vh;">
-            <div class="modal-header">
-                <h3 id="legalModalTitle">Юридический документ</h3>
-                <button class="close-modal" onclick="closeLegalModal()" aria-label="Закрыть окно">&times;</button>
-            </div>
-            <div class="modal-body" style="padding: 20px; overflow-y: auto;">
-                <div id="legalModalContent"></div>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // Функции для работы с модальным окном
-        function showContentModal(url, title) {
+        // Функции для работы с модальным окном о комиссии
+        function showCommissionModal() {
             document.getElementById('commissionModal').style.display = 'flex';
             document.body.style.overflow = 'hidden';
-            
-            // Обновляем заголовок
-            const header = document.querySelector('#commissionModal .commission-header h3');
-            if (header) {
-                header.textContent = title;
-            }
-            
-            // Загружаем контент в iframe
-            const iframe = document.querySelector('#commissionModal .commission-iframe');
-            if (iframe) {
-                iframe.src = url;
-                iframe.title = title;
-            }
-        }
-
-        function showCommissionModal() {
-            showContentModal('vozvrat-komissii.html', 'Оплата на fixcad.ru: легко и просто');
         }
 
         function closeCommissionModal() {
             document.getElementById('commissionModal').style.display = 'none';
             document.body.style.overflow = 'auto';
-            
-            // Сбрасываем iframe src через небольшую задержку
-            setTimeout(() => {
-                const iframe = document.querySelector('#commissionModal .commission-iframe');
-                if (iframe) {
-                    iframe.src = '';
-                }
-            }, 300);
         }
 
         // Закрытие по клику вне модального окна
@@ -1285,20 +1106,6 @@
                 if (document.getElementById('commissionModal').style.display === 'flex') {
                     closeCommissionModal();
                 }
-                if (document.getElementById('orderModal').style.display === 'flex') {
-                    document.getElementById('orderModal').style.display = 'none';
-                }
-                if (document.getElementById('imageModal').style.display === 'flex') {
-                    document.getElementById('imageModal').style.display = 'none';
-                    resetZoom();
-                }
-                if (document.getElementById('modelModal').style.display === 'flex') {
-                    document.getElementById('modelModal').style.display = 'none';
-                    stopAnimation();
-                }
-                if (document.getElementById('legalModal').style.display === 'flex') {
-                    closeLegalModal();
-                }
             }
         });
 
@@ -1306,11 +1113,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             const currentYear = new Date().getFullYear();
             document.getElementById('currentYear').textContent = currentYear;
-            
-            // Сохраняем оригинальные тексты для подсказок формы
-            document.querySelectorAll('.form-help').forEach(help => {
-                help.setAttribute('data-original-text', help.textContent);
-            });
         });
 
         // Юридические документы
@@ -1411,52 +1213,23 @@
                 document.getElementById('legalModalTitle').textContent = doc.title;
                 document.getElementById('legalModalContent').innerHTML = doc.content;
                 document.getElementById('legalModal').style.display = 'flex';
-                document.body.style.overflow = 'hidden';
             }
         }
 
         function closeLegalModal() {
             document.getElementById('legalModal').style.display = 'none';
-            document.body.style.overflow = 'auto';
         }
-
-        // Закрытие по клику вне модального окна
-        document.getElementById('legalModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeLegalModal();
-            }
-        });
 
         // Функция для генерации микроразметки товаров
         function generateProductStructuredData() {
             const productsData = [];
             
-            // Создаем объекты товаров для микроразметки
-            const products = {
-                stend: {
-                    name: "Стенд для пакеров",
-                    description: "Полный комплект чертежей и 3D модель",
-                    image: "https://fixcad.ru/images/stend.png"
-                },
-                stapel: {
-                    name: "Стапель сварочный 3х12 м",
-                    description: "Комплект чертежей + 3D модель",
-                    image: "https://fixcad.ru/images/stapel.png"
-                },
-                level: {
-                    name: "Уровнемер механический",
-                    description: "Для любого емкостного без давления",
-                    image: "https://fixcad.ru/images/level.png"
-                }
-            };
-            
-            for (const [productId, productData] of Object.entries(products)) {
+            for (const [productId, productData] of Object.entries(PRODUCTS)) {
                 const productMarkup = {
                     "@context": "https://schema.org/",
                     "@type": "Product",
                     "name": productData.name,
                     "description": productData.description,
-                    "image": productData.image,
                     "offers": {
                         "@type": "Offer",
                         "price": "100",
@@ -1488,16 +1261,16 @@
         // Конфигурация
         const BACKEND_URL = 'https://fixcad.onrender.com';
         const PRODUCT_URLS = {
-            stend: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=stend',
-            stapel: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=stapel',
-            level: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=level'
-        };
+    stend: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=stend',
+    stapel: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=stapel',
+    level: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=level',
+};
 
         const PRODUCT_NAMES = {
-            stend: 'Стенд для пакеров',
-            stapel: 'Стапель сварочный 3х12 м',
-            level: 'Уровнемер механический'
-        };
+    stend: 'Стенд для пакеров',
+    stapel: 'Стапель сварочный 3х12 м',
+    level: 'Уровнемер механический',
+};
 
         // Переменные для управления состоянием
         let currentProduct = null;
@@ -1511,7 +1284,6 @@
                 document.getElementById('selectedProduct').value = currentProduct;
                 document.getElementById('productName').textContent = PRODUCT_NAMES[currentProduct];
                 document.getElementById('orderModal').style.display = 'flex';
-                document.body.style.overflow = 'hidden';
                 
                 // Сброс формы и состояния кнопки
                 document.getElementById('orderForm').reset();
@@ -1528,11 +1300,6 @@
                     help.classList.remove('error');
                     help.textContent = help.getAttribute('data-original-text') || help.textContent;
                 });
-                
-                // Фокусировка на первом поле
-                setTimeout(() => {
-                    document.getElementById('customerName').focus();
-                }, 100);
             });
         });
 
@@ -1548,7 +1315,7 @@
             } else {
                 this.classList.remove('error');
                 helpText.classList.remove('error');
-                helpText.textContent = helpText.getAttribute('data-original-text') || 'На этот адрес будет отправлена ссылка для скачивания';
+                helpText.textContent = 'На этот адрес будет отправлена ссылка для скачивания';
             }
         });
 
@@ -1563,7 +1330,7 @@
             } else {
                 this.classList.remove('error');
                 helpText.classList.remove('error');
-                helpText.textContent = helpText.getAttribute('data-original-text') || 'Укажите ваше полное имя для связи';
+                helpText.textContent = 'Укажите ваше полное имя для связи';
             }
         });
 
@@ -1599,7 +1366,6 @@
                 messageDiv.className = 'form-message error';
                 messageDiv.innerHTML = '❌ Пожалуйста, заполните обязательные поля правильно';
                 messageDiv.style.display = 'block';
-                messageDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 return;
             }
             
@@ -1626,14 +1392,9 @@
                     })
                 });
                 
-                // Проверяем статус ответа
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
                 const result = await response.json();
                 
-                if (response.ok && result.success) {
+                if (response.ok) {
                     // Создаем умную ссылку с email в label
                     const smartPaymentUrl = `${PRODUCT_URLS[currentProduct]}_${encodeURIComponent(customerEmail)}`;
                     
@@ -1651,7 +1412,7 @@
                         // УПРОЩЕННАЯ ПРОВЕРКА - только самая базовая
                         let isBlocked = false;
                         try {
-                            if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+                            if (!newWindow || newWindow.closed) {
                                 isBlocked = true;
                             }
                         } catch (e) {
@@ -1663,15 +1424,13 @@
                             messageDiv.className = 'form-message error';
                             messageDiv.innerHTML = `
                                 <div style="text-align: center;">
-                                    <strong>Всплывающие окна заблокированы!</strong><br><br>
+                                    <strong>Открываем страницу оплаты...</strong><br><br>
                                     <a href="${smartPaymentUrl}" target="_blank" rel="noopener noreferrer" 
                                        style="display: inline-block; background: #4CAF50; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; margin: 10px 0;">
-                                        🔗 Нажмите здесь для перехода к оплате на ЮMoney
+                                        🔗 Перейти к оплате на ЮMoney
                                     </a>
                                     <br>
-                                    <small style="display: block; margin-top: 10px;">
-                                        После оплаты вернитесь на эту страницу - заказ будет автоматически обработан
-                                    </small>
+                                    <small>Если страница не открылась автоматически, нажмите на кнопку выше</small>
                                 </div>
                             `;
                             messageDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1680,7 +1439,6 @@
                         // ЗАКРЫВАЕМ окно заказа в любом случае через 2 секунды
                         setTimeout(() => {
                             document.getElementById('orderModal').style.display = 'none';
-                            document.body.style.overflow = 'auto';
                         }, 2000);
                         
                     }, 1000);
@@ -1690,26 +1448,13 @@
                 }
                 
             } catch (error) {
-                console.error('Ошибка отправки заказа:', error);
-                
-                // Детализированные сообщения об ошибках
-                let errorMessage = '❌ Ошибка отправки заказа';
-                
-                if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                    errorMessage = '❌ Нет соединения с сервером. Пожалуйста, проверьте интернет и попробуйте еще раз.';
-                } else if (error.message.includes('HTTP')) {
-                    errorMessage = `❌ Ошибка сервера: ${error.message}`;
-                } else {
-                    errorMessage = `❌ ${error.message}`;
-                }
-                
+                console.error('Ошибка:', error);
                 messageDiv.className = 'form-message error';
-                messageDiv.innerHTML = errorMessage;
+                messageDiv.innerHTML = '❌ Ошибка отправки: ' + error.message;
                 messageDiv.style.display = 'block';
-                messageDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Попробовать еще раз';
+                submitBtn.innerHTML = 'Перейти к оплате';
             }
         });
 
@@ -1878,9 +1623,6 @@
                 controls.update();
                 
                 animate();
-            }, undefined, function(error) {
-                console.error('Ошибка загрузки модели:', error);
-                container.innerHTML = '<div class="loading" style="color: #ff6b6b;">❌ Ошибка загрузки модели</div>';
             });
         }
 
@@ -1899,48 +1641,41 @@
 
         // Обработчики для просмотра изображений и 3D моделей
         document.querySelectorAll('.product-image').forEach(image => {
-            image.addEventListener('click', function() {
+            image.onclick = function() {
                 const imageSrc = this.getAttribute('data-image');
                 const modelSrc = this.getAttribute('data-model');
                 
                 if (modelSrc) {
                     document.getElementById('modelModal').style.display = 'flex';
-                    document.body.style.overflow = 'hidden';
                     initThreeJS();
                     setTimeout(() => loadSTLModel(modelSrc), 100);
                 } else {
                     document.getElementById('modalImage').src = imageSrc;
                     document.getElementById('imageModal').style.display = 'flex';
-                    document.body.style.overflow = 'hidden';
                     resetZoom();
                     setupImageDrag();
                 }
-            });
-            
-            // Добавляем обработку нажатия клавиши Enter для доступности
-            image.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    this.click();
-                }
-            });
+            };
+        });
+
+        window.addEventListener('message', function(event) {
+            if (event.data === 'closeCommissionModal') {
+                closeCommissionModal();
+            }
         });
 
         // Обработчики закрытия модальных окон
         document.getElementById('closeOrderModal').addEventListener('click', function() {
             document.getElementById('orderModal').style.display = 'none';
-            document.body.style.overflow = 'auto';
         });
 
         document.getElementById('closeImageModal').addEventListener('click', function() {
             document.getElementById('imageModal').style.display = 'none';
-            document.body.style.overflow = 'auto';
             resetZoom();
         });
 
         document.getElementById('closeModelModal').addEventListener('click', function() {
             document.getElementById('modelModal').style.display = 'none';
-            document.body.style.overflow = 'auto';
             stopAnimation();
         });
 
@@ -1948,14 +1683,12 @@
         document.getElementById('orderModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 this.style.display = 'none';
-                document.body.style.overflow = 'auto';
             }
         });
 
         document.getElementById('imageModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 this.style.display = 'none';
-                document.body.style.overflow = 'auto';
                 resetZoom();
             }
         });
@@ -1963,87 +1696,34 @@
         document.getElementById('modelModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 this.style.display = 'none';
-                document.body.style.overflow = 'auto';
                 stopAnimation();
             }
         });
-
-        // Добавляем обработчик для баннеров разработки
-        document.querySelector('.dev-banner').addEventListener('click', function() {
-            this.style.display = 'none';
-        });
-
-        // Плавная прокрутка для якорей
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const targetId = this.getAttribute('href');
-                if (targetId === '#') return;
-                
-                const targetElement = document.querySelector(targetId);
-                if (targetElement) {
-                    targetElement.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-
-        // Оптимизация: отложенная загрузка изображений
-        document.addEventListener('DOMContentLoaded', function() {
-            const images = document.querySelectorAll('img[data-src]');
-            
-            const imageObserver = new IntersectionObserver((entries, observer) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const img = entry.target;
-                        img.src = img.getAttribute('data-src');
-                        img.removeAttribute('data-src');
-                        observer.unobserve(img);
-                    }
-                });
-            });
-            
-            images.forEach(img => imageObserver.observe(img));
-        });
-
-        // Обработка сообщений от iframe
-        window.addEventListener('message', function(event) {
-            if (event.data === 'closeCommissionModal') {
-                closeCommissionModal();
-            }
-        });
-
-        // Улучшение доступности для модальных окон
-        function trapFocus(element) {
-            const focusableElements = element.querySelectorAll(
-                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            );
-            const firstFocusable = focusableElements[0];
-            const lastFocusable = focusableElements[focusableElements.length - 1];
-            
-            element.addEventListener('keydown', function(e) {
-                if (e.key !== 'Tab') return;
-                
-                if (e.shiftKey) {
-                    if (document.activeElement === firstFocusable) {
-                        lastFocusable.focus();
-                        e.preventDefault();
-                    }
-                } else {
-                    if (document.activeElement === lastFocusable) {
-                        firstFocusable.focus();
-                        e.preventDefault();
-                    }
-                }
-            });
-        }
-
-        // Применяем ловушку фокуса ко всем модальным окнам
-        document.querySelectorAll('.modal').forEach(modal => {
-            trapFocus(modal);
-        });
     </script>
+
+    <!-- Юридический футер -->
+    <div class="legal-footer">
+        <div class="legal-links">
+            <a href="#" onclick="showLegalModal('privacy')">Политика конфиденциальности</a>
+            <a href="#" onclick="showLegalModal('terms')">Пользовательское соглашение</a>
+            <a href="#" onclick="showLegalModal('refund')">Политика возвратов</a>
+        </div>
+        <div class="copyright">
+            © <span id="currentYear">2024</span> FIXCAD MARKET. Все права защищены. Компас® является зарегистрированным товарным знаком АСКОН.
+        </div>
+    </div>
+
+    <!-- Модальное окно для юридических документов -->
+    <div class="modal" id="legalModal">
+        <div class="modal-content" style="max-width: 800px; height: 80vh;">
+            <div class="modal-header">
+                <h3 id="legalModalTitle">Юридический документ</h3>
+                <button class="close-modal" onclick="closeLegalModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px; overflow-y: auto;">
+                <div id="legalModalContent"></div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
