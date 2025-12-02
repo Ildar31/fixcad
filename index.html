@@ -416,6 +416,11 @@
             flex: 1;
             position: relative;
             overflow: hidden;
+            cursor: grab;
+        }
+
+        .modal-body:active {
+            cursor: grabbing;
         }
         
         .modal-body img {
@@ -1770,7 +1775,9 @@
             const img = document.getElementById('modalImage');
 
             modalBody.onmousedown = function(e) {
-                if (currentScale > 1) {
+                // Проверяем, что нажата именно ЛЕВАЯ кнопка мыши (button === 0)
+                if (e.button === 0 && currentScale > 1) {
+                    e.preventDefault(); // Предотвращаем выделение текста и другие действия браузера
                     isDragging = true;
                     startX = e.clientX;
                     startY = e.clientY;
@@ -1782,12 +1789,21 @@
 
             modalBody.onmousemove = function(e) {
                 if (!isDragging) return;
+                e.preventDefault();
                 translateX = initialTranslateX + (e.clientX - startX);
                 translateY = initialTranslateY + (e.clientY - startY);
                 applyTransform();
             };
 
-            modalBody.onmouseup = modalBody.onmouseleave = function() {
+            modalBody.onmouseup = function(e) {
+                // Отпускаем только если была зажата левая кнопка
+                if (e.button === 0) {
+                    isDragging = false;
+                    modalBody.style.cursor = 'default';
+                }
+            };
+
+            modalBody.onmouseleave = function() {
                 isDragging = false;
                 modalBody.style.cursor = 'default';
             };
@@ -1796,6 +1812,9 @@
                 e.preventDefault();
                 e.deltaY < 0 ? zoomIn() : zoomOut();
             };
+
+            // Контекстное меню остается доступным для сохранения изображения
+            // oncontextmenu не переопределяем
         }
 
         function initThreeJS() {
