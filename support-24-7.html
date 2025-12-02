@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Поддержка 24/7 на fixcad.ru</title>
+    <link rel="icon" href="images/favicon.png">
+
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: white;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+        .content-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2, h3, h4 {
+            color: #2c3e50;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-top: 10px;
+        }
+        p {
+            margin-bottom: 15px;
+            text-indent: 2em;
+        }
+        ul li {
+            text-indent: 0;
+        }
+        
+        .feature-box {
+            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 100%);
+            border: 2px solid #e91e63;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 25px 0;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 6px 20px rgba(233, 30, 99, 0.15);
+        }
+        
+        .feature-box::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #e91e63, #c2185b);
+        }
+        
+        .feature-header {
+            color: #880e4f;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .feature-header::before {
+            content: "💬";
+            font-size: 1.5em;
+        }
+        
+        .support-item {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 10px;
+            border-left: 4px solid #e91e63;
+            margin-bottom: 15px;
+        }
+        
+        .support-item h3 {
+            color: #880e4f;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .contact-method {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid #ffccd5;
+        }
+        
+        .contact-icon {
+            background: #e91e63;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            flex-shrink: 0;
+        }
+        
+        .contact-details {
+            flex: 1;
+        }
+        
+        .contact-details strong {
+            color: #c2185b;
+        }
+        
+        .response-time {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border: 1px solid #4caf50;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .back-button-container {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+        }
+        
+        .back-button {
+            display: inline-block;
+            background: linear-gradient(145deg, #e91e63 0%, #c2185b 100%);
+            color: white;
+            text-decoration: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(233, 30, 99, 0.3);
+            border: 2px solid rgba(255,255,255,0.2);
+            cursor: pointer;
+            border: none;
+        }
+        
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(233, 30, 99, 0.5);
+        }
+        
+        .help-categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .help-category {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-top: 4px solid #e91e63;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="content-wrapper">
+        <h1>💬 Поддержка 24/7 на <a href="https://fixcad.ru" target="_blank" style="color: #e91e63; text-decoration: none; border-bottom: 2px dashed #e91e63;">fixcad.ru</a></h1>
+
+        <div class="feature-box">
+            <h2 class="feature-header">Мы всегда на связи!</h2>
+            
+            <p style="text-indent: 0; font-size: 1.1em; color: #880e4f; font-weight: bold;">
+                Получите помощь в любое время дня и ночи по любым вопросам
+            </p>
+            
+            <div class="support-item">
+                <h3>📧 Основной способ связи</h3>
+                <div class="contact-method">
+                    <div class="contact-icon">📨</div>
+                    <div class="contact-details">
+                        <strong>Email:</strong> irashitov79@mail.ru<br>
+                        <small>Работает круглосуточно, отвечаем в течение 1 часа</small>
+                    </div>
+                </div>
+                
+                <div class="response-time">
+                    ⏱️ <strong>Среднее время ответа:</strong> 15-60 минут (в рабочее время)<br>
+                    🌙 <strong>Ночью и в выходные:</strong> до 2 часов
+                </div>
+            </div>
+            
+            <div class="support-item">
+                <h3>🆘 По каким вопросам обращаться?</h3>
+                <div class="help-categories">
+                    <div class="help-category">
+                        <strong>🔧 Технические вопросы</strong>
+                        <ul style="margin: 10px 0 0 0; padding-left: 20px; font-size: 0.9em;">
+                            <li>Проблемы с открытием файлов</li>
+                            <li>Совместимость с вашей версией КОМПАС</li>
+                            <li>Вопросы по использованию файлов</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="help-category">
+                        <strong>💰 Оплата и доставка</strong>
+                        <ul style="margin: 10px 0 0 0; padding-left: 20px; font-size: 0.9em;">
+                            <li>Проблемы с оплатой</li>
+                            <li>Не пришли файлы после оплаты</li>
+                            <li>Вопросы по возвратам</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="help-category">
+                        <strong>📁 Контент и файлы</strong>
+                        <ul style="margin: 10px 0 0 0; padding-left: 20px; font-size: 0.9em;">
+                            <li>Нужен дополнительный формат</li>
+                            <li>Обнаружили ошибку в файлах</li>
+                            <li>Хотите предложить улучшения</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="help-category">
+                        <strong>🤝 Сотрудничество</strong>
+                        <ul style="margin: 10px 0 0 0; padding-left: 20px; font-size: 0.9em;">
+                            <li>Оптовые закупки</li>
+                            <li>Индивидуальные заказы</li>
+                            <li>Партнерские программы</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="support-item">
+                <h3>📋 Как максимально быстро получить помощь?</h3>
+                <ol style="padding-left: 20px;">
+                    <li><strong>В теме письма укажите:</strong> "FIXCAD: [краткое описание проблемы]"</li>
+                    <li><strong>В письме обязательно укажите:</strong>
+                        <ul style="margin: 5px 0; padding-left: 20px;">
+                            <li>Номер заказа (если есть)</li>
+                            <li>Email, на который оформляли заказ</li>
+                            <li>Название товара</li>
+                            <li>Подробное описание проблемы</li>
+                            <li>Скриншоты ошибок (если есть)</li>
+                        </ul>
+                    </li>
+                    <li><strong>Для технических вопросов:</strong> укажите версию КОМПАС-3D и операционную систему</li>
+                </ol>
+            </div>
+            
+            <div class="support-item">
+                <h3>⏰ График работы поддержки</h3>
+                <div style="background: rgba(233, 30, 99, 0.1); padding: 15px; border-radius: 8px; margin: 10px 0;">
+                    <p style="text-indent: 0; margin: 5px 0;"><strong>📅 Основное время работы:</strong></p>
+                    <p style="text-indent: 0; margin: 5px 0;">• <strong>Понедельник-Пятница:</strong> 9:00 - 23:00 (мск)</p>
+                    <p style="text-indent: 0; margin: 5px 0;">• <strong>Суббота-Воскресенье:</strong> 10:00 - 20:00 (мск)</p>
+                    
+                    <p style="text-indent: 0; margin: 10px 0 5px 0;"><strong>🌙 Вне основного времени:</strong></p>
+                    <p style="text-indent: 0; margin: 5px 0;">• <strong>Ночью и в праздники:</strong> отвечаем в дежурном режиме</p>
+                    <p style="text-indent: 0; margin: 5px 0;">• <strong>Экстренные случаи:</strong> если оплатили, но не получили файлы — ответим максимально быстро!</p>
+                </div>
+            </div>
+            
+            <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; border-left: 4px solid #2196f3; margin-top: 20px;">
+                <h3 style="color: #1565c0; margin-top: 0;">✅ Что гарантируем?</h3>
+                <ul style="margin: 10px 0 0 0;">
+                    <li>Ответим на каждое обращение</li>
+                    <li>Поможем решить любую проблему</li>
+                    <li>Исправим ошибки в файлах, если они есть</li>
+                    <li>Вернем деньги, если не смогли помочь</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="back-button-container">
+            <button class="back-button" id="closeButton">← Закрыть и вернуться на сайт</button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('closeButton').addEventListener('click', function() {
+            if (window.parent !== window) {
+                window.parent.postMessage('closeCommissionModal', '*');
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (window.parent !== window) {
+                    window.parent.postMessage('closeCommissionModal', '*');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
