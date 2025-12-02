@@ -1263,7 +1263,23 @@
         function generateProductStructuredData() {
             const productsData = [];
             
-            for (const [productId, productData] of Object.entries(PRODUCTS)) {
+            // Создаем объекты товаров для микроразметки
+            const products = {
+                stend: {
+                    name: "Стенд для пакеров",
+                    description: "Полный комплект чертежей и 3D модель"
+                },
+                stapel: {
+                    name: "Стапель сварочный 3х12 м",
+                    description: "Комплект чертежей + 3D модель"
+                },
+                level: {
+                    name: "Уровнемер механический",
+                    description: "Для любого емкостного без давления"
+                }
+            };
+            
+            for (const [productId, productData] of Object.entries(products)) {
                 const productMarkup = {
                     "@context": "https://schema.org/",
                     "@type": "Product",
@@ -1300,16 +1316,16 @@
         // Конфигурация
         const BACKEND_URL = 'https://fixcad.onrender.com';
         const PRODUCT_URLS = {
-    stend: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=stend',
-    stapel: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=stapel',
-    level: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=level',
-};
+            stend: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=stend',
+            stapel: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=stapel',
+            level: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=level'
+        };
 
         const PRODUCT_NAMES = {
-    stend: 'Стенд для пакеров',
-    stapel: 'Стапель сварочный 3х12 м',
-    level: 'Уровнемер механический',
-};
+            stend: 'Стенд для пакеров',
+            stapel: 'Стапель сварочный 3х12 м',
+            level: 'Уровнемер механический'
+        };
 
         // Переменные для управления состоянием
         let currentProduct = null;
