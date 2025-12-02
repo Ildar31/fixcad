@@ -1,14 +1,18 @@
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, messagebox, filedialog, scrolledtext
 import json
 import os
 import re
 import shutil
+import tempfile
+import webbrowser
+from datetime import datetime
+import time
 
 class ProductManager:
     def __init__(self, root):
         self.root = root
-        self.root.title("FIXCAD MARKET - Менеджер товаров")
+        self.root.title("FIXCAD MARKET - Менеджер товаров v2.0")
         
         # Пути к файлам и папкам
         self.index_html_path = "index.html"
@@ -25,10 +29,13 @@ class ProductManager:
         
         self.setup_ui()
         self.load_products_simple()
+
+        # Автоматическая очистка старых временных файлов при запуске
+        self.root.after(1000, self.auto_cleanup)  # Запуск через 1 секунду
         
         # Устанавливаем минимальный размер окна
         self.root.update()
-        self.root.minsize(1000, 700)
+        self.root.minsize(1100, 750)
         
     def setup_ui(self):
         # Основной фрейм
@@ -36,7 +43,7 @@ class ProductManager:
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         
         # Заголовок
-        title_label = ttk.Label(main_frame, text="Управление товарами FIXCAD MARKET", 
+        title_label = ttk.Label(main_frame, text="Управление товарами FIXCAD MARKET v2.0", 
                                font=("Arial", 16, "bold"))
         title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20))
         
@@ -179,14 +186,23 @@ class ProductManager:
         ttk.Button(list_buttons_frame, text="▼ Вниз", command=self.move_down).pack(side=tk.LEFT, padx=2)
         ttk.Button(list_buttons_frame, text="Дублировать", command=self.duplicate_product).pack(side=tk.LEFT, padx=5)
         ttk.Button(list_buttons_frame, text="Удалить", command=self.delete_product).pack(side=tk.LEFT, padx=5)
-        
+
         # Кнопки экспорта
         export_frame = ttk.Frame(main_frame)
         export_frame.grid(row=2, column=0, columnspan=2, pady=20)
         
+        ttk.Button(export_frame, text="Предпросмотр HTML", command=self.preview_html).pack(side=tk.LEFT, padx=5)
+        ttk.Button(export_frame, text="Очистить временные файлы", command=self.cleanup_temp_files).pack(side=tk.LEFT, padx=5)
         ttk.Button(export_frame, text="Обновить index.html", command=self.update_index_html).pack(side=tk.LEFT, padx=5)
         ttk.Button(export_frame, text="Обновить server.js", command=self.update_server_js).pack(side=tk.LEFT, padx=5)
         ttk.Button(export_frame, text="Обновить оба файла", command=self.update_both).pack(side=tk.LEFT, padx=5)
+        
+        # Панель статуса
+        status_frame = ttk.Frame(main_frame)
+        status_frame.grid(row=3, column=0, columnspan=2, pady=10, sticky=(tk.W, tk.E))
+        
+        self.status_var = tk.StringVar(value="Готов к работе")
+        ttk.Label(status_frame, textvariable=self.status_var, foreground="green").pack(side=tk.LEFT)
         
         # Привязка событий
         self.tree.bind("<<TreeviewSelect>>", self.on_tree_select)
@@ -211,27 +227,25 @@ class ProductManager:
             messagebox.showerror("Ошибка", f"Товар с ID '{product_id}' уже существует!")
             return
         
+        # Проверка уникальности zipUrl
+        zip_url = self.zip_url_var.get().strip()
+        duplicate = self.check_duplicate_url(zip_url, exclude_product=product_id)
+        if duplicate:
+            if not messagebox.askyesno("Дублирование ссылки", 
+                f"Ссылка Яндекс.Диск уже используется товаром '{duplicate['name']}' (ID: {duplicate['id']}).\n"
+                "Продолжить?"):
+                return
+        
         # Копируем файлы
         self.copy_product_files(product_id)
         
         # Собираем форматы
-        formats = []
-        if self.cdw_var.get(): formats.append("CDW")
-        if self.spw_var.get(): formats.append("SPW")
-        if self.a3d_var.get(): formats.append("A3D")
-        if self.m3d_var.get(): formats.append("M3D")
-        if self.stl_var.get(): formats.append("STL")
-        if self.step_var.get(): formats.append("STEP")
-        if self.pdf_var.get(): formats.append("PDF")
-        if self.doc_var.get(): formats.append("DOC")
-        if self.xls_var.get(): formats.append("XLS")
-        if self.txt_var.get(): formats.append("TXT")
-        if self.exe_var.get(): formats.append("EXE")
+        formats = self.get_selected_formats()
             
         self.products[product_id] = {
             'name': self.name_var.get().strip(),
             'description': self.desc_var.get().strip(),
-            'zipUrl': self.zip_url_var.get().strip(),
+            'zipUrl': zip_url,
             'zipName': self.zip_name_var.get().strip(),
             'contents': [line.strip() for line in self.contents_text.get("1.0", tk.END).strip().split('\n') if line.strip()],
             'formats': formats,
@@ -316,6 +330,28 @@ class ProductManager:
             }
         }
         self.refresh_tree()
+        
+    def get_selected_formats(self):
+        """Получает список выбранных форматов"""
+        formats = []
+        format_vars = [
+            (self.cdw_var, "CDW"),
+            (self.spw_var, "SPW"),
+            (self.a3d_var, "A3D"),
+            (self.m3d_var, "M3D"),
+            (self.stl_var, "STL"),
+            (self.step_var, "STEP"),
+            (self.pdf_var, "PDF"),
+            (self.doc_var, "DOC"),
+            (self.xls_var, "XLS"),
+            (self.txt_var, "TXT"),
+            (self.exe_var, "EXE")
+        ]
+        
+        for var, fmt in format_vars:
+            if var.get():
+                formats.append(fmt)
+        return formats
 
     def refresh_tree(self):
         """Обновляет дерево товаров с сохранением порядка"""
@@ -354,27 +390,25 @@ class ProductManager:
             messagebox.showerror("Ошибка", f"Товар с ID '{product_id}' не найден!")
             return
         
+        # Проверка уникальности zipUrl
+        zip_url = self.zip_url_var.get().strip()
+        duplicate = self.check_duplicate_url(zip_url, exclude_product=product_id)
+        if duplicate:
+            if not messagebox.askyesno("Дублирование ссылки", 
+                f"Ссылка Яндекс.Диск уже используется товаром '{duplicate['name']}' (ID: {duplicate['id']}).\n"
+                "Продолжить?"):
+                return
+        
         # Копируем файлы
         self.copy_product_files(product_id)
         
         # Собираем форматы
-        formats = []
-        if self.cdw_var.get(): formats.append("CDW")
-        if self.spw_var.get(): formats.append("SPW")
-        if self.a3d_var.get(): formats.append("A3D")
-        if self.m3d_var.get(): formats.append("M3D")
-        if self.stl_var.get(): formats.append("STL")
-        if self.step_var.get(): formats.append("STEP")
-        if self.pdf_var.get(): formats.append("PDF")
-        if self.doc_var.get(): formats.append("DOC")
-        if self.xls_var.get(): formats.append("XLS")
-        if self.txt_var.get(): formats.append("TXT")
-        if self.exe_var.get(): formats.append("EXE")
+        formats = self.get_selected_formats()
             
         self.products[product_id] = {
             'name': self.name_var.get().strip(),
             'description': self.desc_var.get().strip(),
-            'zipUrl': self.zip_url_var.get().strip(),
+            'zipUrl': zip_url,
             'zipName': self.zip_name_var.get().strip(),
             'contents': [line.strip() for line in self.contents_text.get("1.0", tk.END).strip().split('\n') if line.strip()],
             'formats': formats,
@@ -591,6 +625,324 @@ class ProductManager:
         selection = self.tree.selection()
         if selection:
             self.edit_product()
+            
+    def check_duplicate_url(self, url, exclude_product=None):
+        """Проверяет уникальность ссылки Яндекс.Диск"""
+        for product_id, product_data in self.products.items():
+            if exclude_product and product_id == exclude_product:
+                continue
+            if product_data.get('zipUrl') == url:
+                return {'id': product_id, 'name': product_data['name']}
+        return None
+
+    def preview_html(self):
+        """Предпросмотр генерируемого HTML"""
+        try:
+            # Генерируем HTML с учетом предпросмотра
+            products_html = self.generate_products_html(for_preview=True)
+            
+            # Создаем временный файл для предпросмотра
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as temp_file:
+                temp_path = temp_file.name
+                
+                # Подсчитываем статистику для отображения
+                total_products = len(self.products)
+                products_with_3d = sum(1 for p in self.products.values() if p.get('has_3d', False))
+                products_with_images = sum(1 for p in self.products.values() if p.get('has_image', False))
+                
+                temp_file.write(f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Предпросмотр товаров FIXCAD MARKET</title>
+                    <style>
+                        * {{
+                            margin: 0;
+                            padding: 0;
+                            box-sizing: border-box;
+                        }}
+                        
+                        body {{ 
+                            font-family: 'Arial', sans-serif; 
+                            padding: 20px; 
+                            background: #f5f5f5;
+                        }}
+                        
+                        .preview-container {{
+                            max-width: 1200px;
+                            margin: 0 auto;
+                        }}
+                        
+                        .preview-title {{ 
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                            color: white; 
+                            padding: 20px; 
+                            border-radius: 10px; 
+                            text-align: center; 
+                            margin-bottom: 30px; 
+                            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                        }}
+                        
+                        .preview-title h1 {{
+                            margin-bottom: 10px;
+                            font-size: 28px;
+                        }}
+                        
+                        .preview-info {{
+                            display: flex;
+                            justify-content: space-around;
+                            margin-top: 15px;
+                            font-size: 14px;
+                            opacity: 0.9;
+                        }}
+                        
+                        .products-grid {{ 
+                            display: grid; 
+                            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+                            gap: 25px; 
+                        }}
+                        
+                        .product-card {{ 
+                            background: white; 
+                            border-radius: 15px; 
+                            padding: 20px; 
+                            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+                            transition: transform 0.2s;
+                        }}
+                        
+                        .product-card:hover {{
+                            transform: translateY(-5px);
+                            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+                        }}
+                        
+                        .product-image {{ 
+                            width: 100%; 
+                            height: 200px; 
+                            background: #f0f0f0; 
+                            border-radius: 10px; 
+                            margin-bottom: 15px; 
+                            display: flex; 
+                            align-items: center; 
+                            justify-content: center; 
+                            overflow: hidden; 
+                            border: 2px solid #e9ecef;
+                            position: relative;
+                        }}
+                        
+                        .product-image img {{ 
+                            max-width: 100%; 
+                            max-height: 100%; 
+                            object-fit: contain;
+                        }}
+                        
+                        .product-image .format-badge {{
+                            position: absolute;
+                            top: 10px;
+                            left: 10px;
+                            background: #667eea;
+                            color: white;
+                            padding: 3px 8px;
+                            border-radius: 10px;
+                            font-size: 10px;
+                            z-index: 1;
+                        }}
+                        
+                        .product-image .model-indicator {{
+                            position: absolute;
+                            bottom: 10px;
+                            right: 10px;
+                            background: rgba(0,0,0,0.7);
+                            color: white;
+                            padding: 5px 10px;
+                            border-radius: 15px;
+                            font-size: 12px;
+                            z-index: 1;
+                        }}
+                        
+                        .product-title {{
+                            font-size: 1.2em;
+                            font-weight: bold;
+                            margin-bottom: 8px;
+                            color: #333;
+                        }}
+                        
+                        .product-description {{
+                            color: #666;
+                            margin-bottom: 12px;
+                            font-size: 0.9em;
+                        }}
+                        
+                        .formats-list {{
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 5px;
+                            margin: 10px 0;
+                        }}
+                        
+                        .format-tag {{
+                            background: #e9ecef;
+                            padding: 2px 8px;
+                            border-radius: 10px;
+                            font-size: 0.8em;
+                            color: #495057;
+                        }}
+                        
+                        .product-features {{
+                            list-style: none;
+                            margin: 15px 0;
+                            padding-left: 0;
+                            font-size: 0.9em;
+                        }}
+                        
+                        .product-features li {{
+                            padding: 4px 0;
+                            border-bottom: 1px solid #f0f0f0;
+                        }}
+                        
+                        .product-features li:before {{
+                            content: "✅ ";
+                            margin-right: 8px;
+                            font-size: 0.8em;
+                        }}
+                        
+                        .buy-button {{
+                            display: block;
+                            width: 100%;
+                            background: linear-gradient(45deg, #4CAF50, #45a049);
+                            color: white;
+                            text-decoration: none;
+                            padding: 12px;
+                            border-radius: 8px;
+                            font-weight: bold;
+                            text-align: center;
+                            margin-top: 10px;
+                            border: none;
+                            cursor: default;
+                        }}
+                        
+                        .stats-box {{
+                            background: white;
+                            border-radius: 10px;
+                            padding: 15px;
+                            margin-bottom: 20px;
+                            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                        }}
+                        
+                        .stats-grid {{
+                            display: grid;
+                            grid-template-columns: repeat(3, 1fr);
+                            gap: 15px;
+                            margin-top: 15px;
+                        }}
+                        
+                        .stat-item {{
+                            text-align: center;
+                            padding: 10px;
+                            background: #f8f9fa;
+                            border-radius: 8px;
+                        }}
+                        
+                        .stat-number {{
+                            font-size: 24px;
+                            font-weight: bold;
+                            color: #667eea;
+                        }}
+                        
+                        .stat-label {{
+                            font-size: 12px;
+                            color: #666;
+                            margin-top: 5px;
+                        }}
+
+                        .stat-subtext {{
+                            font-size: 10px;
+                            color: #999;
+                            margin-top: 2px;
+                        }}
+                        
+                        @media (max-width: 768px) {{
+                            .products-grid {{
+                                grid-template-columns: 1fr;
+                            }}
+                            
+                            .stats-grid {{
+                                grid-template-columns: 1fr;
+                            }}
+                            
+                            .preview-info {{
+                                flex-direction: column;
+                                gap: 10px;
+                            }}
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <div class="preview-container">
+                        <div class="preview-title">
+                            <h1>📐 Предпросмотр товаров FIXCAD MARKET</h1>
+                            <p>Здесь показано, как будут выглядеть товары на сайте после обновления</p>
+                            <div class="preview-info">
+                                <div>🔄 Обновлено: {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}</div>
+                                <div>📦 Товаров: {total_products}</div>
+                                <div>👁️‍🗨️ Режим предпросмотра</div>
+                            </div>
+                        </div>
+                        
+                        <div class="stats-box">
+                            <h3>📊 Статистика товаров</h3>
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <div class="stat-number">{total_products}</div>
+                                    <div class="stat-label">Всего товаров</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-number">{products_with_3d}</div>
+                                    <div class="stat-label">С 3D моделями</div>
+                                    <div class="stat-subtext">
+                                        из {total_products} товаров
+                                    </div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-number">{products_with_images}</div>
+                                    <div class="stat-label">С изображениями</div>
+                                    <div class="stat-subtext">
+                                        из {total_products} товаров
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="products-grid">
+                            {products_html}
+                        </div>
+                        
+                        <div style="text-align: center; margin-top: 30px; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                            <h3>ℹ️ Информация о предпросмотре</h3>
+                            <p style="margin: 10px 0; color: #666;">
+                                Это предпросмотр сгенерирован программой "FIXCAD MARKET - Менеджер товаров"
+                            </p>
+                            <p style="margin: 10px 0; color: #666;">
+                                • Изображения показываются из папки <code>images/</code><br>
+                                • 3D модели из папки <code>models/</code> в предпросмотре не загружаются<br>
+                                • Кнопки "Купить" в предпросмотре неактивны<br>
+                                • Для реального обновления сайта нажмите кнопку "Обновить index.html"
+                            </p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """)
+            
+            # Открываем в браузере
+            webbrowser.open(f'file://{temp_path}')
+            
+            self.status_var.set(f"👁️‍🗨️ Предпросмотр открыт ({total_products} товаров)")
+            
+        except Exception as e:
+            self.status_var.set("❌ Ошибка предпросмотра")
+            messagebox.showerror("Ошибка", f"Не удалось создать предпросмотр: {str(e)}\n\nПодробности: {traceback.format_exc()}")
 
     def update_index_html(self):
         """Обновляет index.html с новыми товарами"""
@@ -631,19 +983,25 @@ class ProductManager:
                 flags=re.DOTALL
             )
             
+            # Обновляем микроразметку Schema.org для товаров
+            new_content = self.update_schema_markup(new_content)
+            
             with open(self.index_html_path, 'w', encoding='utf-8') as f:
                 f.write(new_content)
             
-            messagebox.showinfo("Успех", "index.html успешно обновлен!")
+            self.status_var.set(f"✅ index.html обновлен ({len(self.products)} товаров)")
+            messagebox.showinfo("Успех", f"index.html успешно обновлен!\nДобавлено товаров: {len(self.products)}")
             
         except Exception as e:
+            self.status_var.set("❌ Ошибка обновления index.html")
             messagebox.showerror("Ошибка", f"Не удалось обновить index.html: {str(e)}")
 
     def generate_product_names_js(self):
         """Генерирует JS код для названий товаров"""
         names_js = "{\n"
         for product_id, product_data in self.products.items():
-            names_js += f"    {product_id}: '{product_data['name']}',\n"
+            escaped_name = product_data['name'].replace("'", "\\'")
+            names_js += f"    {product_id}: '{escaped_name}',\n"
         names_js += "}"
         return names_js
 
@@ -657,7 +1015,7 @@ class ProductManager:
         urls_js += "}"
         return urls_js
 
-    def generate_products_html(self):
+    def generate_products_html(self, for_preview=False):
         """Генерирует HTML код для товаров"""
         html_parts = []
         
@@ -674,14 +1032,33 @@ class ProductManager:
             indicator_text = "3D просмотр" if has_3d else "Изображение"
             
             # Если есть изображение - показываем его, иначе placeholder
-            if has_image:
-                image_content = f'<img src="images/{product_id}.png" alt="{product_data["name"]}">'
+            if has_image and not for_preview:
+                # Для реального сайта - относительные пути
+                # Ищем правильное расширение файла
+                image_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp']
+                image_tag = '<div style="font-size:3em; color:#667eea;">📐</div>'
+                for ext in image_extensions:
+                    image_path = os.path.join(self.images_dir, f"{product_id}{ext}")
+                    if os.path.exists(image_path):
+                        image_tag = f'<img src="images/{product_id}{ext}" alt="{product_data["name"]}">'
+                        break
+            elif has_image and for_preview:
+                # Для предпросмотра - абсолютные пути к файлам
+                image_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp']
+                image_tag = '<div style="font-size:3em; color:#667eea;">📐</div>'
+                for ext in image_extensions:
+                    image_path = os.path.join(self.images_dir, f"{product_id}{ext}")
+                    if os.path.exists(image_path):
+                        # Преобразуем путь в формат file:// для браузера
+                        abs_path = os.path.abspath(image_path)
+                        image_tag = f'<img src="file://{abs_path}" alt="{product_data["name"]}" style="max-width: 100%; max-height: 100%; object-fit: contain;">'
+                        break
             else:
-                image_content = f'<div style="font-size:3em;">📐</div>'
+                image_tag = f'<div style="font-size:3em; color:#667eea; display: flex; align-items: center; justify-content: center; height: 100%;">📐</div>'
             
             product_html = f"""        <div class="product-card">
-            <div class="product-image" data-image="images/{product_id}.png" {"data-model=\"models/" + product_id + ".stl\"" if has_3d else ""}>
-                {image_content}
+            <div class="product-image" {"data-model=\"models/" + product_id + ".stl\"" if has_3d and not for_preview else ""} role="button" tabindex="0" aria-label="Просмотреть изображение {product_data['name']}">
+                {image_tag}
                 <div class="format-badge">{main_format}</div>
                 <div class="model-indicator">{indicator_text}</div>
             </div>
@@ -693,7 +1070,7 @@ class ProductManager:
             <ul class="product-features">
                 {features_html}
             </ul>
-            <button class="buy-button" data-product="{product_id}">
+            <button class="buy-button" {"data-product=\"" + product_id + "\"" if not for_preview else ""} aria-label="Купить {product_data['name']} за 100 рублей">
                 Купить за 100 руб.
             </button>
         </div>"""
@@ -701,6 +1078,73 @@ class ProductManager:
             html_parts.append(product_html)
         
         return '\n\n'.join(html_parts)
+        
+    def update_schema_markup(self, content):
+        """Обновляет микроразметку Schema.org для всех товаров"""
+        # Генерируем микроразметку для всех товаров
+        schema_script = '<script type="application/ld+json">\n'
+        schema_script += '    {\n'
+        schema_script += '        "@context": "https://schema.org/",\n'
+        schema_script += '        "@type": "ItemList",\n'
+        schema_script += '        "itemListElement": [\n'
+        
+        item_list = []
+        for i, (product_id, product_data) in enumerate(self.products.items(), 1):
+            # Ищем изображение
+            image_url = ""
+            image_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp']
+            for ext in image_extensions:
+                if os.path.exists(os.path.join(self.images_dir, f"{product_id}{ext}")):
+                    image_url = f"https://fixcad.ru/images/{product_id}{ext}"
+                    break
+            
+            item = f'''            {{
+                "@type": "ListItem",
+                "position": {i},
+                "item": {{
+                    "@type": "Product",
+                    "name": "{product_data['name']}",
+                    "description": "{product_data['description']}",
+                    "image": "{image_url if image_url else 'https://fixcad.ru/images/logo.png'}",
+                    "offers": {{
+                        "@type": "Offer",
+                        "price": "100",
+                        "priceCurrency": "RUB",
+                        "availability": "https://schema.org/InStock"
+                    }}
+                }}
+            }}'''
+            item_list.append(item)
+        
+        schema_script += ',\n'.join(item_list)
+        schema_script += '\n        ]\n'
+        schema_script += '    }\n'
+        schema_script += '</script>'
+        
+        # Ищем существующую микроразметку ProductCollection и заменяем ее
+        if 'ProductCollection' in content:
+            # Заменяем существующую микроразметку
+            new_content = re.sub(
+                r'<script type="application/ld\+json">\s*{\s*"@context":\s*"https://schema\.org",\s*"@type":\s*"ProductCollection".*?</script>',
+                schema_script,
+                content,
+                flags=re.DOTALL
+            )
+        else:
+            # Ищем место для вставки (после других schema скриптов)
+            schema_pattern = r'(<script type="application/ld\+json">.*?</script>\s*)'
+            matches = list(re.finditer(schema_pattern, content, re.DOTALL))
+            
+            if matches:
+                # Вставляем после последнего schema скрипта
+                last_match = matches[-1]
+                insert_pos = last_match.end()
+                new_content = content[:insert_pos] + '\n' + schema_script + '\n' + content[insert_pos:]
+            else:
+                # Вставляем перед закрывающим </head>
+                new_content = content.replace('</head>', schema_script + '\n</head>')
+        
+        return new_content
 
     def update_server_js(self):
         """Обновляет server.js с новыми товарами"""
@@ -711,6 +1155,20 @@ class ProductManager:
             
             with open(self.server_js_path, 'r', encoding='utf-8') as f:
                 content = f.read()
+            
+            # Проверяем уникальность всех zipUrl
+            duplicates = self.check_all_url_duplicates()
+            if duplicates:
+                dup_message = "Обнаружены дублирующиеся ссылки Яндекс.Диск:\n\n"
+                for url, products in duplicates.items():
+                    dup_message += f"Ссылка: {url}\n"
+                    for product_id in products:
+                        dup_message += f"  - {product_id}: {self.products[product_id]['name']}\n"
+                    dup_message += "\n"
+                
+                dup_message += "Рекомендуется использовать уникальные ссылки для каждого товара."
+                if not messagebox.askyesno("Дублирование ссылок", dup_message + "\n\nПродолжить обновление?"):
+                    return
             
             # Генерируем JS код для товаров
             products_js = self.generate_products_js()
@@ -726,10 +1184,31 @@ class ProductManager:
             with open(self.server_js_path, 'w', encoding='utf-8') as f:
                 f.write(new_content)
             
-            messagebox.showinfo("Успех", "server.js успешно обновлен!")
+            self.status_var.set(f"✅ server.js обновлен ({len(self.products)} товаров)")
+            messagebox.showinfo("Успех", f"server.js успешно обновлен!\nДобавлено товаров: {len(self.products)}")
             
         except Exception as e:
+            self.status_var.set("❌ Ошибка обновления server.js")
             messagebox.showerror("Ошибка", f"Не удалось обновить server.js: {str(e)}")
+            
+    def check_all_url_duplicates(self):
+        """Проверяет все товары на дублирование ссылок"""
+        url_map = {}
+        duplicates = {}
+        
+        for product_id, product_data in self.products.items():
+            url = product_data.get('zipUrl', '')
+            if url:
+                if url not in url_map:
+                    url_map[url] = []
+                url_map[url].append(product_id)
+        
+        # Фильтруем только дубликаты
+        for url, products in url_map.items():
+            if len(products) > 1:
+                duplicates[url] = products
+                
+        return duplicates
 
     def generate_products_js(self):
         """Генерирует JS код для товаров"""
@@ -738,8 +1217,8 @@ class ProductManager:
         for product_id, product_data in self.products.items():
             # Для server.js нам не нужны форматы и has_3d
             server_data = {
-                'name': product_data['name'],
-                'description': product_data['description'],
+                'name': product_data['name'].replace("'", "\\'"),
+                'description': product_data['description'].replace("'", "\\'"),
                 'zipUrl': product_data['zipUrl'],
                 'zipName': product_data['zipName'],
                 'contents': product_data['contents']
@@ -824,6 +1303,60 @@ class ProductManager:
         items = self.tree.get_children()
         if items and current_index + 1 < len(items):
             self.tree.selection_set(items[current_index + 1])
+
+    def cleanup_temp_files(self):
+        """Очищает временные файлы предпросмотра"""
+        try:
+            # Ищем временные HTML файлы
+            temp_dir = tempfile.gettempdir()
+            deleted_files = []
+            
+            for filename in os.listdir(temp_dir):
+                if filename.startswith('tmp') and filename.endswith('.html'):
+                    file_path = os.path.join(temp_dir, filename)
+                    try:
+                        # Проверяем, что файл достаточно старый (старше 1 часа)
+                        file_age = time.time() - os.path.getmtime(file_path)
+                        if file_age > 3600:  # 1 час
+                            os.remove(file_path)
+                            deleted_files.append(filename)
+                    except:
+                        pass
+            
+            if deleted_files:
+                messagebox.showinfo("Очистка", f"Удалено временных файлов: {len(deleted_files)}")
+                self.status_var.set(f"🧹 Удалено {len(deleted_files)} временных файлов")
+            else:
+                messagebox.showinfo("Очистка", "Временные файлы не найдены или все актуальны")
+                self.status_var.set("✅ Нет файлов для очистки")
+                
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Не удалось очистить временные файлы: {str(e)}")
+            self.status_var.set("❌ Ошибка очистки")
+
+    def auto_cleanup(self):
+        """Автоматическая очистка старых временных файлов"""
+        try:
+            temp_dir = tempfile.gettempdir()
+            deleted_count = 0
+            
+            for filename in os.listdir(temp_dir):
+                if filename.startswith('tmp') and filename.endswith('.html'):
+                    file_path = os.path.join(temp_dir, filename)
+                    try:
+                        # Удаляем файлы старше 24 часов
+                        file_age = time.time() - os.path.getmtime(file_path)
+                        if file_age > 86400:  # 24 часа
+                            os.remove(file_path)
+                            deleted_count += 1
+                    except:
+                        pass
+            
+            if deleted_count > 0:
+                print(f"Автоматически удалено {deleted_count} старых временных файлов")
+                
+        except Exception as e:
+            print(f"Ошибка автоматической очистки: {e}")
 
 def main():
     root = tk.Tk()
