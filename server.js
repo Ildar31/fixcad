@@ -35,6 +35,18 @@ const PRODUCTS = {
       'Спецификации'
     ]
   },
+  vent: {
+    name: 'Вентилятор ВР-80-75-2,5 взрывозащищенный',
+    description: 'Сборочный чертеж, 3D модель Компас v21',
+    zipUrl: 'https://disk.yandex.ru/d/VV65Q1zBSR9D0Q/download',
+    zipName: 'vent.zip',
+    contents: [
+      'Сборочный чертеж JPG',
+      '3D модель КОМПАС',
+      'Видеоинструкция по изготовлению',
+      'Файл STEP'
+    ]
+  },
   level: {
     name: 'Уровнемер механический',
     description: 'Для любого емкостного без давления',
