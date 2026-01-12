@@ -1,1231 +1,1294 @@
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, Menu
+from tkinter import ttk, messagebox, scrolledtext, Menu
 import json
-import os
 import re
+import os
+import webbrowser
+from tkinter import filedialog
+import sys
+import subprocess
 import shutil
 
 class ProductManager:
     def __init__(self, root):
         self.root = root
         self.root.title("FIXCAD MARKET - Менеджер товаров")
+        self.root.geometry("1200x700")
         
-        # Пути к файлам и папкам
-        self.index_html_path = "index.html"
+        # Устанавливаем минимальный размер окна (нельзя уменьшить)
+        self.root.minsize(1200, 700)
+        
+        self.bg_color = "#f0f0f0"
+        self.frame_bg = "#ffffff"
+        self.accent_color = "#667eea"
+        self.secondary_color = "#764ba2"
+        
+        self.root.configure(bg=self.bg_color)
+        
+        # Делаем колонки и строки растягиваемыми
+        self.root.grid_rowconfigure(0, weight=1)
+        self.root.grid_columnconfigure(0, weight=1)
+        
+        self.products_js_path = "products.js"
         self.server_js_path = "server.js"
-        self.images_dir = "images"
-        self.models_dir = "models"
+        self.products_data = {}
+        self.server_products = {}
         
-        # Создаем папки если их нет
-        os.makedirs(self.images_dir, exist_ok=True)
-        os.makedirs(self.models_dir, exist_ok=True)
+        # Добавляем список для хранения удаленных товаров
+        self.deleted_products = set()
         
-        # Данные товаров
-        self.products = {}
+        # Создаем контекстное меню
+        self.context_menu = Menu(self.root, tearoff=0)
+        self.context_menu.add_command(label="Копировать", command=self.copy_text)
+        self.context_menu.add_command(label="Вставить", command=self.paste_text)
+        self.context_menu.add_separator()
+        self.context_menu.add_command(label="Вырезать", command=self.cut_text)
         
         self.setup_ui()
-        self.setup_context_menu()
-        self.load_products_simple()
+        self.load_data()
         
-        # Устанавливаем минимальный размер окна
-        self.root.update()
-        self.root.minsize(1000, 700)
+        # Привязываем контекстное меню ко всему окну
+        self.root.bind("<Button-3>", self.show_context_menu)
         
     def setup_ui(self):
-        # Основной фрейм
-        main_frame = ttk.Frame(self.root, padding="10")
-        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        main_container = tk.Frame(self.root, bg=self.bg_color)
+        main_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        # Заголовок
-        title_label = ttk.Label(main_frame, text="Управление товарами FIXCAD MARKET", 
-                               font=("Arial", 16, "bold"))
-        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20))
+        # Делаем main_container растягиваемым
+        main_container.grid_rowconfigure(1, weight=1)
+        main_container.grid_columnconfigure(0, weight=1)
         
-        # Форма добавления/редактирования товара
-        form_frame = ttk.LabelFrame(main_frame, text="Добавить/Редактировать товар", padding="10")
-        form_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(0, 10))
+        top_frame = tk.Frame(main_container, bg=self.bg_color)
+        top_frame.pack(fill=tk.X, pady=(0, 10))
         
-        # Поля формы
-        ttk.Label(form_frame, text="ID товара:").grid(row=0, column=0, sticky=tk.W, pady=2)
+        tk.Button(top_frame, text="🔄 Обновить данные", command=self.load_data,
+                 bg=self.accent_color, fg="white", padx=15, pady=5).pack(side=tk.LEFT, padx=5)
+        tk.Button(top_frame, text="➕ Добавить товар", command=self.add_product,
+                 bg="#4CAF50", fg="white", padx=15, pady=5).pack(side=tk.LEFT, padx=5)
+        tk.Button(top_frame, text="💾 Сохранить все", command=self.save_all,
+                 bg="#2196F3", fg="white", padx=15, pady=5).pack(side=tk.LEFT, padx=5)
+        tk.Button(top_frame, text="📋 Инструкция", command=self.show_instructions,
+                 bg="#FF9800", fg="white", padx=15, pady=5).pack(side=tk.LEFT, padx=5)
+        
+        content_frame = tk.Frame(main_container, bg=self.bg_color)
+        content_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Делаем content_frame растягиваемым
+        content_frame.grid_rowconfigure(0, weight=1)
+        content_frame.grid_columnconfigure(1, weight=1)
+        
+        left_frame = tk.Frame(content_frame, bg=self.frame_bg, relief=tk.RAISED, borderwidth=1)
+        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, padx=(0, 10))
+        
+        # Делаем left_frame растягиваемым по высоте
+        left_frame.grid_rowconfigure(2, weight=1)
+        left_frame.grid_columnconfigure(0, weight=1)
+        
+        tk.Label(left_frame, text="📦 Товары", font=("Arial", 12, "bold"),
+                bg=self.frame_bg).pack(pady=10)
+        
+        list_controls = tk.Frame(left_frame, bg=self.frame_bg)
+        list_controls.pack(fill=tk.X, padx=10, pady=5)
+        
+        tk.Button(list_controls, text="⬆️", command=self.move_up, width=3).pack(side=tk.LEFT, padx=2)
+        tk.Button(list_controls, text="⬇️", command=self.move_down, width=3).pack(side=tk.LEFT, padx=2)
+        tk.Button(list_controls, text="📋", command=self.duplicate_product, width=3).pack(side=tk.LEFT, padx=2)
+        tk.Button(list_controls, text="🗑️", command=self.delete_product, width=3).pack(side=tk.LEFT, padx=2)
+        
+        self.products_listbox = tk.Listbox(left_frame, font=("Arial", 10), selectmode=tk.SINGLE)
+        self.products_listbox.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        self.products_listbox.bind('<<ListboxSelect>>', self.on_product_select)
+        
+        # Привязываем контекстное меню к Listbox
+        self.products_listbox.bind("<Button-3>", self.show_context_menu)
+        
+        right_frame = tk.Frame(content_frame, bg=self.frame_bg, relief=tk.RAISED, borderwidth=1)
+        right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+        
+        tk.Label(right_frame, text="✏️ Редактирование товара", font=("Arial", 12, "bold"),
+                bg=self.frame_bg).pack(pady=10)
+        
+        self.notebook = ttk.Notebook(right_frame)
+        self.notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        self.basic_frame = tk.Frame(self.notebook, bg=self.frame_bg)
+        self.notebook.add(self.basic_frame, text="Основные")
+        self.create_basic_tab()
+        
+        self.files_frame = tk.Frame(self.notebook, bg=self.frame_bg)
+        self.notebook.add(self.files_frame, text="Файлы")
+        self.create_files_tab()
+        
+        self.advanced_frame = tk.Frame(self.notebook, bg=self.frame_bg)
+        self.notebook.add(self.advanced_frame, text="Дополнительно")
+        self.create_advanced_tab()
+        
+        # Кнопка сохранения текущего товара
+        save_btn = tk.Button(right_frame, text="💾 Сохранить товар", 
+                           command=self.save_product,
+                           bg="#4CAF50", fg="white", padx=15, pady=5)
+        save_btn.pack(pady=10)
+        
+        self.status_var = tk.StringVar(value="Готов к работе")
+        status_bar = tk.Label(self.root, textvariable=self.status_var,
+                            bg=self.accent_color, fg="white", anchor=tk.W)
+        status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+        
+    def create_basic_tab(self):
+        frame = self.basic_frame
+        
+        # Делаем колонки растягиваемыми
+        frame.grid_columnconfigure(1, weight=1)
+        
+        tk.Label(frame, text="ID товара:", bg=self.frame_bg).grid(row=0, column=0, sticky=tk.W, padx=10, pady=5)
         self.product_id_var = tk.StringVar()
-        self.product_id_entry = ttk.Entry(form_frame, textvariable=self.product_id_var, width=20)
-        self.product_id_entry.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=2)
+        self.product_id_entry = tk.Entry(frame, textvariable=self.product_id_var)
+        self.product_id_entry.grid(row=0, column=1, sticky=tk.EW, padx=10, pady=5)
         
-        # Контекстное меню для поля ID
-        self.product_id_context_menu = Menu(self.product_id_entry, tearoff=0)
-        self.product_id_context_menu.add_command(label="Копировать", command=self.copy_product_id)
-        self.product_id_context_menu.add_command(label="Вставить", command=self.paste_to_product_id)
-        self.product_id_context_menu.add_separator()
-        self.product_id_context_menu.add_command(label="Вырезать", command=self.cut_product_id)
-        self.product_id_context_menu.add_command(label="Выделить все", command=lambda: self.product_id_entry.select_range(0, tk.END))
+        # Привязываем контекстное меню к полям ввода
+        self.product_id_entry.bind("<Button-3>", self.show_context_menu)
         
-        ttk.Label(form_frame, text="Название:").grid(row=1, column=0, sticky=tk.W, pady=2)
+        tk.Label(frame, text="Название:", bg=self.frame_bg).grid(row=1, column=0, sticky=tk.W, padx=10, pady=5)
         self.name_var = tk.StringVar()
-        self.name_entry = ttk.Entry(form_frame, textvariable=self.name_var, width=30)
-        self.name_entry.grid(row=1, column=1, sticky=(tk.W, tk.E), pady=2)
+        self.name_entry = tk.Entry(frame, textvariable=self.name_var)
+        self.name_entry.grid(row=1, column=1, sticky=tk.EW, padx=10, pady=5)
+        self.name_entry.bind("<Button-3>", self.show_context_menu)
         
-        # Контекстное меню для поля названия
-        self.name_context_menu = Menu(self.name_entry, tearoff=0)
-        self.name_context_menu.add_command(label="Копировать", command=self.copy_name)
-        self.name_context_menu.add_command(label="Вставить", command=self.paste_to_name)
-        self.name_context_menu.add_separator()
-        self.name_context_menu.add_command(label="Вырезать", command=self.cut_name)
-        self.name_context_menu.add_command(label="Выделить все", command=lambda: self.name_entry.select_range(0, tk.END))
+        tk.Label(frame, text="Описание:", bg=self.frame_bg).grid(row=2, column=0, sticky=tk.NW, padx=10, pady=5)
+        self.desc_text = tk.Text(frame, height=4, wrap=tk.WORD)  # Добавлен перенос слов
+        self.desc_text.grid(row=2, column=1, sticky=tk.NSEW, padx=10, pady=5)
+        self.desc_text.bind("<Button-3>", self.show_context_menu)
         
-        ttk.Label(form_frame, text="Описание:").grid(row=2, column=0, sticky=tk.W, pady=2)
-        self.desc_var = tk.StringVar()
-        self.desc_entry = ttk.Entry(form_frame, textvariable=self.desc_var, width=30)
-        self.desc_entry.grid(row=2, column=1, sticky=(tk.W, tk.E), pady=2)
+        # Делаем строку с текстом растягиваемой
+        frame.grid_rowconfigure(2, weight=1)
         
-        # Контекстное меню для поля описания
-        self.desc_context_menu = Menu(self.desc_entry, tearoff=0)
-        self.desc_context_menu.add_command(label="Копировать", command=self.copy_desc)
-        self.desc_context_menu.add_command(label="Вставить", command=self.paste_to_desc)
-        self.desc_context_menu.add_separator()
-        self.desc_context_menu.add_command(label="Вырезать", command=self.cut_desc)
-        self.desc_context_menu.add_command(label="Выделить все", command=lambda: self.desc_entry.select_range(0, tk.END))
+        tk.Label(frame, text="Изображение:", bg=self.frame_bg).grid(row=3, column=0, sticky=tk.W, padx=10, pady=5)
+        image_frame = tk.Frame(frame, bg=self.frame_bg)
+        image_frame.grid(row=3, column=1, sticky=tk.EW, padx=10, pady=5)
+        image_frame.grid_columnconfigure(0, weight=1)
+        self.image_var = tk.StringVar()
+        self.image_entry = tk.Entry(image_frame, textvariable=self.image_var)
+        self.image_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.image_entry.bind("<Button-3>", self.show_context_menu)
+        tk.Button(image_frame, text="📁", command=self.browse_image, width=3).pack(side=tk.LEFT, padx=5)
         
-        ttk.Label(form_frame, text="Ссылка Яндекс.Диск:").grid(row=3, column=0, sticky=tk.W, pady=2)
+        tk.Label(frame, text="3D модель:", bg=self.frame_bg).grid(row=4, column=0, sticky=tk.W, padx=10, pady=5)
+        model_frame = tk.Frame(frame, bg=self.frame_bg)
+        model_frame.grid(row=4, column=1, sticky=tk.EW, padx=10, pady=5)
+        model_frame.grid_columnconfigure(0, weight=1)
+        self.model_var = tk.StringVar()
+        self.model_entry = tk.Entry(model_frame, textvariable=self.model_var)
+        self.model_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.model_entry.bind("<Button-3>", self.show_context_menu)
+        tk.Button(model_frame, text="📁", command=self.browse_model, width=3).pack(side=tk.LEFT, padx=5)
+        tk.Button(model_frame, text="❌", command=lambda: self.model_var.set(""), width=3).pack(side=tk.LEFT, padx=5)
+        
+        tk.Label(frame, text="Бейдж формата:", bg=self.frame_bg).grid(row=5, column=0, sticky=tk.W, padx=10, pady=5)
+        self.format_var = tk.StringVar()
+        self.format_combo = ttk.Combobox(frame, textvariable=self.format_var, 
+                                        values=["CDW", "SPW", "A3D", "M3D", "STL", "STEP", "TXT"])
+        self.format_combo.grid(row=5, column=1, sticky=tk.EW, padx=10, pady=5)
+        self.format_combo.bind("<Button-3>", self.show_context_menu)
+        
+    def create_files_tab(self):
+        frame = self.files_frame
+        
+        # Делаем колонки растягиваемыми
+        frame.grid_columnconfigure(1, weight=1)
+        
+        tk.Label(frame, text="Ссылка на Яндекс.Диск:", bg=self.frame_bg).grid(row=0, column=0, sticky=tk.W, padx=10, pady=5)
         self.zip_url_var = tk.StringVar()
-        self.zip_url_entry = ttk.Entry(form_frame, textvariable=self.zip_url_var, width=40)
-        self.zip_url_entry.grid(row=3, column=1, sticky=(tk.W, tk.E), pady=2)
+        self.zip_url_entry = tk.Entry(frame, textvariable=self.zip_url_var)
+        self.zip_url_entry.grid(row=0, column=1, sticky=tk.EW, padx=10, pady=5)
+        self.zip_url_entry.bind("<Button-3>", self.show_context_menu)
         
-        # Контекстное меню для поля ссылки
-        self.zip_url_context_menu = Menu(self.zip_url_entry, tearoff=0)
-        self.zip_url_context_menu.add_command(label="Копировать", command=self.copy_zip_url)
-        self.zip_url_context_menu.add_command(label="Вставить", command=self.paste_to_zip_url)
-        self.zip_url_context_menu.add_separator()
-        self.zip_url_context_menu.add_command(label="Вырезать", command=self.cut_zip_url)
-        self.zip_url_context_menu.add_command(label="Выделить все", command=lambda: self.zip_url_entry.select_range(0, tk.END))
-        
-        ttk.Label(form_frame, text="Имя архива:").grid(row=4, column=0, sticky=tk.W, pady=2)
+        tk.Label(frame, text="Имя архива:", bg=self.frame_bg).grid(row=1, column=0, sticky=tk.W, padx=10, pady=5)
         self.zip_name_var = tk.StringVar()
-        self.zip_name_entry = ttk.Entry(form_frame, textvariable=self.zip_name_var, width=30)
-        self.zip_name_entry.grid(row=4, column=1, sticky=(tk.W, tk.E), pady=2)
+        self.zip_name_entry = tk.Entry(frame, textvariable=self.zip_name_var)
+        self.zip_name_entry.grid(row=1, column=1, sticky=tk.EW, padx=10, pady=5)
+        self.zip_name_entry.bind("<Button-3>", self.show_context_menu)
         
-        # Контекстное меню для поля имени архива
-        self.zip_name_context_menu = Menu(self.zip_name_entry, tearoff=0)
-        self.zip_name_context_menu.add_command(label="Копировать", command=self.copy_zip_name)
-        self.zip_name_context_menu.add_command(label="Вставить", command=self.paste_to_zip_name)
-        self.zip_name_context_menu.add_separator()
-        self.zip_name_context_menu.add_command(label="Вырезать", command=self.cut_zip_name)
-        self.zip_name_context_menu.add_command(label="Выделить все", command=lambda: self.zip_name_entry.select_range(0, tk.END))
+        tk.Label(frame, text="Ссылка на оплату (ЮMoney):", bg=self.frame_bg).grid(row=2, column=0, sticky=tk.W, padx=10, pady=5)
+        self.payment_url_var = tk.StringVar()
+        self.payment_url_entry = tk.Entry(frame, textvariable=self.payment_url_var)
+        self.payment_url_entry.grid(row=2, column=1, sticky=tk.EW, padx=10, pady=5)
+        self.payment_url_entry.bind("<Button-3>", self.show_context_menu)
         
-        # Форматы файлов
-        ttk.Label(form_frame, text="Форматы файлов:").grid(row=5, column=0, sticky=tk.W, pady=2)
-        formats_frame = ttk.Frame(form_frame)
-        formats_frame.grid(row=5, column=1, sticky=(tk.W, tk.E), pady=2)
+        tk.Label(frame, text="Форматы файлов:", bg=self.frame_bg).grid(row=3, column=0, sticky=tk.W, padx=10, pady=5)
+        self.formats_var = tk.StringVar()
+        self.formats_entry = tk.Entry(frame, textvariable=self.formats_var)
+        self.formats_entry.grid(row=3, column=1, sticky=tk.EW, padx=10, pady=5)
+        self.formats_entry.bind("<Button-3>", self.show_context_menu)
         
-        # Первый ряд форматов
-        formats_row1 = ttk.Frame(formats_frame)
-        formats_row1.pack(fill=tk.X)
+    def create_advanced_tab(self):
+        frame = self.advanced_frame
         
-        self.cdw_var = tk.BooleanVar(value=True)
-        self.spw_var = tk.BooleanVar(value=True)
-        self.a3d_var = tk.BooleanVar(value=True)
-        self.m3d_var = tk.BooleanVar(value=True)
-        self.stl_var = tk.BooleanVar(value=False)
+        # Делаем колонки и строки растягиваемыми
+        frame.grid_columnconfigure(1, weight=1)
+        frame.grid_rowconfigure(0, weight=1)
+        frame.grid_rowconfigure(1, weight=1)
         
-        ttk.Checkbutton(formats_row1, text="CDW", variable=self.cdw_var).pack(side=tk.LEFT)
-        ttk.Checkbutton(formats_row1, text="SPW", variable=self.spw_var).pack(side=tk.LEFT)
-        ttk.Checkbutton(formats_row1, text="A3D", variable=self.a3d_var).pack(side=tk.LEFT)
-        ttk.Checkbutton(formats_row1, text="M3D", variable=self.m3d_var).pack(side=tk.LEFT)
-        ttk.Checkbutton(formats_row1, text="STL", variable=self.stl_var).pack(side=tk.LEFT)
+        tk.Label(frame, text="Особенности товара:", bg=self.frame_bg).grid(row=0, column=0, sticky=tk.NW, padx=10, pady=5)
+        self.features_text = scrolledtext.ScrolledText(frame, wrap=tk.WORD)  # Добавлен перенос слов
+        self.features_text.grid(row=0, column=1, sticky=tk.NSEW, padx=10, pady=5)
+        self.features_text.bind("<Button-3>", self.show_context_menu)
         
-        # Второй ряд форматов (новые)
-        formats_row2 = ttk.Frame(formats_frame)
-        formats_row2.pack(fill=tk.X, pady=(5, 0))
+        tk.Label(frame, text="Содержимое архива:", bg=self.frame_bg).grid(row=1, column=0, sticky=tk.NW, padx=10, pady=5)
+        self.contents_text = scrolledtext.ScrolledText(frame, wrap=tk.WORD)  # Добавлен перенос слов
+        self.contents_text.grid(row=1, column=1, sticky=tk.NSEW, padx=10, pady=5)
+        self.contents_text.bind("<Button-3>", self.show_context_menu)
         
-        self.step_var = tk.BooleanVar(value=False)
-        self.pdf_var = tk.BooleanVar(value=False)
-        self.doc_var = tk.BooleanVar(value=False)
-        self.xls_var = tk.BooleanVar(value=False)
-        self.txt_var = tk.BooleanVar(value=False)
-        self.exe_var = tk.BooleanVar(value=False)
+        tk.Button(frame, text="🔄 Сгенерировать содержимое",
+                 command=self.generate_contents,
+                 bg=self.accent_color, fg="white").grid(row=2, column=1, sticky=tk.W, padx=10, pady=5)
         
-        ttk.Checkbutton(formats_row2, text="STEP", variable=self.step_var).pack(side=tk.LEFT)
-        ttk.Checkbutton(formats_row2, text="PDF", variable=self.pdf_var).pack(side=tk.LEFT)
-        ttk.Checkbutton(formats_row2, text="DOC", variable=self.doc_var).pack(side=tk.LEFT)
-        ttk.Checkbutton(formats_row2, text="XLS", variable=self.xls_var).pack(side=tk.LEFT)
-        ttk.Checkbutton(formats_row2, text="TXT", variable=self.txt_var).pack(side=tk.LEFT)
-        ttk.Checkbutton(formats_row2, text="EXE", variable=self.exe_var).pack(side=tk.LEFT)
-        
-        # 3D модель
-        ttk.Label(form_frame, text="Есть 3D модель:").grid(row=6, column=0, sticky=tk.W, pady=2)
-        self.has_3d_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(form_frame, text="Есть 3D модель (STL)", variable=self.has_3d_var).grid(row=6, column=1, sticky=tk.W, pady=2)
-        
-        # Загрузка файлов
-        ttk.Label(form_frame, text="Изображение товара:").grid(row=7, column=0, sticky=tk.W, pady=2)
-        file_frame = ttk.Frame(form_frame)
-        file_frame.grid(row=7, column=1, sticky=(tk.W, tk.E), pady=2)
-        
-        self.image_path_var = tk.StringVar()
-        self.image_path_entry = ttk.Entry(file_frame, textvariable=self.image_path_var, width=25)
-        self.image_path_entry.pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(file_frame, text="Выбрать...", command=self.select_image).pack(side=tk.LEFT)
-        
-        # Контекстное меню для поля пути к изображению
-        self.image_path_context_menu = Menu(self.image_path_entry, tearoff=0)
-        self.image_path_context_menu.add_command(label="Копировать", command=self.copy_image_path)
-        self.image_path_context_menu.add_command(label="Вставить", command=self.paste_to_image_path)
-        self.image_path_context_menu.add_separator()
-        self.image_path_context_menu.add_command(label="Вырезать", command=self.cut_image_path)
-        self.image_path_context_menu.add_command(label="Выделить все", command=lambda: self.image_path_entry.select_range(0, tk.END))
-        
-        ttk.Label(form_frame, text="3D модель (STL):").grid(row=8, column=0, sticky=tk.W, pady=2)
-        model_frame = ttk.Frame(form_frame)
-        model_frame.grid(row=8, column=1, sticky=(tk.W, tk.E), pady=2)
-        
-        self.model_path_var = tk.StringVar()
-        self.model_path_entry = ttk.Entry(model_frame, textvariable=self.model_path_var, width=25)
-        self.model_path_entry.pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(model_frame, text="Выбрать...", command=self.select_model).pack(side=tk.LEFT)
-        
-        # Контекстное меню для поля пути к модели
-        self.model_path_context_menu = Menu(self.model_path_entry, tearoff=0)
-        self.model_path_context_menu.add_command(label="Копировать", command=self.copy_model_path)
-        self.model_path_context_menu.add_command(label="Вставить", command=self.paste_to_model_path)
-        self.model_path_context_menu.add_separator()
-        self.model_path_context_menu.add_command(label="Вырезать", command=self.cut_model_path)
-        self.model_path_context_menu.add_command(label="Выделить все", command=lambda: self.model_path_entry.select_range(0, tk.END))
-        
-        # Содержимое архива
-        ttk.Label(form_frame, text="Содержимое архива:").grid(row=9, column=0, sticky=tk.W, pady=2)
-        self.contents_text = tk.Text(form_frame, width=30, height=4)
-        self.contents_text.grid(row=9, column=1, sticky=(tk.W, tk.E), pady=2)
-        
-        # Контекстное меню для текстового поля содержимого архива
-        self.contents_text_context_menu = Menu(self.contents_text, tearoff=0)
-        self.contents_text_context_menu.add_command(label="Копировать", command=self.copy_contents_text)
-        self.contents_text_context_menu.add_command(label="Вставить", command=self.paste_to_contents_text)
-        self.contents_text_context_menu.add_separator()
-        self.contents_text_context_menu.add_command(label="Вырезать", command=self.cut_contents_text)
-        self.contents_text_context_menu.add_command(label="Выделить все", command=lambda: self.contents_text.tag_add(tk.SEL, "1.0", tk.END))
-        
-        # Кнопки формы
-        button_frame = ttk.Frame(form_frame)
-        button_frame.grid(row=10, column=0, columnspan=2, pady=10)
-        
-        ttk.Button(button_frame, text="Новый товар", command=self.new_product).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Сохранить", command=self.update_product).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Очистить форму", command=self.clear_form).pack(side=tk.LEFT, padx=5)
-        
-        # Список товаров
-        list_frame = ttk.LabelFrame(main_frame, text="Список товаров", padding="10")
-        list_frame.grid(row=1, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
-        
-        # Таблица товаров
-        columns = ("ID", "Название", "Форматы", "3D", "Файлы")
-        self.tree = ttk.Treeview(list_frame, columns=columns, show="headings", height=15)
-        
-        self.tree.heading("ID", text="ID")
-        self.tree.heading("Название", text="Название")
-        self.tree.heading("Форматы", text="Форматы")
-        self.tree.heading("3D", text="3D")
-        self.tree.heading("Файлы", text="Файлы")
-        
-        self.tree.column("ID", width=80)
-        self.tree.column("Название", width=150)
-        self.tree.column("Форматы", width=100)
-        self.tree.column("3D", width=50)
-        self.tree.column("Файлы", width=80)
-        
-        self.tree.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        
-        # Контекстное меню для таблицы
-        self.tree_context_menu = Menu(self.tree, tearoff=0)
-        self.tree_context_menu.add_command(label="Копировать ID", command=self.copy_selected_id)
-        self.tree_context_menu.add_command(label="Копировать название", command=self.copy_selected_name)
-        self.tree_context_menu.add_separator()
-        self.tree_context_menu.add_command(label="Вставить ID в форму", command=self.paste_id_from_selected)
-        
-        # Скроллбар для таблицы
-        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.tree.yview)
-        scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
-        self.tree.configure(yscrollcommand=scrollbar.set)
-        
-        # Кнопки управления списком
-        list_buttons_frame = ttk.Frame(list_frame)
-        list_buttons_frame.grid(row=1, column=0, columnspan=2, pady=10)
-        
-        ttk.Button(list_buttons_frame, text="▲ Вверх", command=self.move_up).pack(side=tk.LEFT, padx=2)
-        ttk.Button(list_buttons_frame, text="▼ Вниз", command=self.move_down).pack(side=tk.LEFT, padx=2)
-        ttk.Button(list_buttons_frame, text="Дублировать", command=self.duplicate_product).pack(side=tk.LEFT, padx=5)
-        ttk.Button(list_buttons_frame, text="Удалить", command=self.delete_product).pack(side=tk.LEFT, padx=5)
-        
-        # Кнопки экспорта
-        export_frame = ttk.Frame(main_frame)
-        export_frame.grid(row=2, column=0, columnspan=2, pady=20)
-        
-        ttk.Button(export_frame, text="Обновить index.html", command=self.update_index_html).pack(side=tk.LEFT, padx=5)
-        ttk.Button(export_frame, text="Обновить server.js", command=self.update_server_js).pack(side=tk.LEFT, padx=5)
-        ttk.Button(export_frame, text="Обновить оба файла", command=self.update_both).pack(side=tk.LEFT, padx=5)
-        
-        # Кнопки копирования/вставки
-        clipboard_frame = ttk.Frame(main_frame)
-        clipboard_frame.grid(row=3, column=0, columnspan=2, pady=10)
-        
-        ttk.Button(clipboard_frame, text="Копировать всю форму", command=self.copy_all_form).pack(side=tk.LEFT, padx=5)
-        ttk.Button(clipboard_frame, text="Вставить ID", command=self.paste_to_product_id).pack(side=tk.LEFT, padx=5)
-        ttk.Button(clipboard_frame, text="Горячие клавиши", command=self.show_hotkeys).pack(side=tk.LEFT, padx=5)
-        
-        # Привязка событий
-        self.tree.bind("<<TreeviewSelect>>", self.on_tree_select)
-        self.tree.bind("<Button-3>", self.show_tree_context_menu)
-        
-        # Настройка весов для растягивания
-        self.root.columnconfigure(0, weight=1)
-        self.root.rowconfigure(0, weight=1)
-        main_frame.columnconfigure(0, weight=1)
-        main_frame.columnconfigure(1, weight=1)
-        main_frame.rowconfigure(1, weight=1)
-        form_frame.columnconfigure(1, weight=1)
-        list_frame.columnconfigure(0, weight=1)
-        list_frame.rowconfigure(0, weight=1)
-        
-    def setup_context_menu(self):
-        """Настройка контекстных меню для всех текстовых полей"""
-        # Привязка правой кнопки мыши для всех полей ввода
-        entries = [
-            (self.product_id_entry, self.product_id_context_menu),
-            (self.name_entry, self.name_context_menu),
-            (self.desc_entry, self.desc_context_menu),
-            (self.zip_url_entry, self.zip_url_context_menu),
-            (self.zip_name_entry, self.zip_name_context_menu),
-            (self.image_path_entry, self.image_path_context_menu),
-            (self.model_path_entry, self.model_path_context_menu)
-        ]
-        
-        for entry, menu in entries:
-            entry.bind("<Button-3>", lambda event, m=menu: self.show_context_menu(event, m))
-        
-        # Для текстового поля
-        self.contents_text.bind("<Button-3>", lambda event: self.show_context_menu(event, self.contents_text_context_menu))
-        
-        # Горячие клавиши
-        self.root.bind("<Control-c>", self.copy_from_focused)
-        self.root.bind("<Control-v>", self.paste_to_focused)
-        self.root.bind("<Control-x>", self.cut_from_focused)
-        self.root.bind("<Control-a>", self.select_all_in_focused)
-        
-    def show_context_menu(self, event, menu):
-        """Показывает контекстное меню"""
+    def show_context_menu(self, event):
+        """Показывает контекстное меню для активного виджета"""
         try:
-            menu.tk_popup(event.x_root, event.y_root)
+            # Получаем виджет, на котором был клик
+            widget = event.widget
+            
+            # Устанавливаем фокус на виджет
+            widget.focus_set()
+            
+            # Для Text виджетов нужно обеспечить выделение текста
+            if isinstance(widget, (tk.Text, scrolledtext.ScrolledText)):
+                # Получаем позицию клика
+                index = widget.index(f"@{event.x},{event.y}")
+                
+                # Проверяем, есть ли выделение
+                try:
+                    if widget.selection_get():
+                        # Текст уже выделен, ничего не делаем
+                        pass
+                    else:
+                        # Если нет выделения, помещаем курсор в позицию клика
+                        widget.mark_set(tk.INSERT, index)
+                        widget.see(tk.INSERT)
+                except tk.TclError:
+                    # Нет выделения
+                    pass
+            
+            # Показываем меню и ждем
+            self.context_menu.post(event.x_root, event.y_root)
+            
+            # Ждем, пока меню не будет закрыто
+            self.root.wait_window(self.context_menu)
+            
         finally:
-            menu.grab_release()
+            # Гарантируем, что меню будет скрыто
+            self.context_menu.unpost()
             
-    def show_tree_context_menu(self, event):
-        """Показывает контекстное меню для таблицы"""
-        try:
-            self.tree_context_menu.tk_popup(event.x_root, event.y_root)
-        finally:
-            self.tree_context_menu.grab_release()
-    
-    # Методы для копирования из полей формы
-    def copy_product_id(self):
-        self.root.clipboard_clear()
-        self.root.clipboard_append(self.product_id_var.get())
-        
-    def copy_name(self):
-        self.root.clipboard_clear()
-        self.root.clipboard_append(self.name_var.get())
-        
-    def copy_desc(self):
-        self.root.clipboard_clear()
-        self.root.clipboard_append(self.desc_var.get())
-        
-    def copy_zip_url(self):
-        self.root.clipboard_clear()
-        self.root.clipboard_append(self.zip_url_var.get())
-        
-    def copy_zip_name(self):
-        self.root.clipboard_clear()
-        self.root.clipboard_append(self.zip_name_var.get())
-        
-    def copy_image_path(self):
-        self.root.clipboard_clear()
-        self.root.clipboard_append(self.image_path_var.get())
-        
-    def copy_model_path(self):
-        self.root.clipboard_clear()
-        self.root.clipboard_append(self.model_path_var.get())
-        
-    def copy_contents_text(self):
-        self.root.clipboard_clear()
-        self.root.clipboard_append(self.contents_text.get("1.0", tk.END).strip())
-    
-    # Методы для вставки в поля формы
-    def paste_to_product_id(self):
-        try:
-            clipboard_text = self.root.clipboard_get()
-            self.product_id_var.set(clipboard_text)
-        except:
-            pass
-            
-    def paste_to_name(self):
-        try:
-            clipboard_text = self.root.clipboard_get()
-            self.name_var.set(clipboard_text)
-        except:
-            pass
-            
-    def paste_to_desc(self):
-        try:
-            clipboard_text = self.root.clipboard_get()
-            self.desc_var.set(clipboard_text)
-        except:
-            pass
-            
-    def paste_to_zip_url(self):
-        try:
-            clipboard_text = self.root.clipboard_get()
-            self.zip_url_var.set(clipboard_text)
-        except:
-            pass
-            
-    def paste_to_zip_name(self):
-        try:
-            clipboard_text = self.root.clipboard_get()
-            self.zip_name_var.set(clipboard_text)
-        except:
-            pass
-            
-    def paste_to_image_path(self):
-        try:
-            clipboard_text = self.root.clipboard_get()
-            self.image_path_var.set(clipboard_text)
-        except:
-            pass
-            
-    def paste_to_model_path(self):
-        try:
-            clipboard_text = self.root.clipboard_get()
-            self.model_path_var.set(clipboard_text)
-        except:
-            pass
-            
-    def paste_to_contents_text(self):
-        try:
-            clipboard_text = self.root.clipboard_get()
-            self.contents_text.insert(tk.INSERT, clipboard_text)
-        except:
-            pass
-    
-    # Методы для вырезания
-    def cut_product_id(self):
-        self.copy_product_id()
-        self.product_id_var.set("")
-        
-    def cut_name(self):
-        self.copy_name()
-        self.name_var.set("")
-        
-    def cut_desc(self):
-        self.copy_desc()
-        self.desc_var.set("")
-        
-    def cut_zip_url(self):
-        self.copy_zip_url()
-        self.zip_url_var.set("")
-        
-    def cut_zip_name(self):
-        self.copy_zip_name()
-        self.zip_name_var.set("")
-        
-    def cut_image_path(self):
-        self.copy_image_path()
-        self.image_path_var.set("")
-        
-    def cut_model_path(self):
-        self.copy_model_path()
-        self.model_path_var.set("")
-        
-    def cut_contents_text(self):
-        self.copy_contents_text()
-        self.contents_text.delete("1.0", tk.END)
-    
-    # Методы для работы с таблицей
-    def copy_selected_id(self):
-        selection = self.tree.selection()
-        if selection:
-            product_id = self.tree.item(selection[0])['values'][0]
-            self.root.clipboard_clear()
-            self.root.clipboard_append(product_id)
-            
-    def copy_selected_name(self):
-        selection = self.tree.selection()
-        if selection:
-            product_name = self.tree.item(selection[0])['values'][1]
-            self.root.clipboard_clear()
-            self.root.clipboard_append(product_name)
-            
-    def paste_id_from_selected(self):
-        selection = self.tree.selection()
-        if selection:
-            product_id = self.tree.item(selection[0])['values'][0]
-            self.product_id_var.set(product_id)
-    
-    # Методы для горячих клавиш
-    def copy_from_focused(self, event=None):
-        """Копирует текст из активного поля"""
+    def copy_text(self):
+        """Копирует выделенный текст"""
         widget = self.root.focus_get()
-        if widget == self.product_id_entry:
-            self.copy_product_id()
-        elif widget == self.name_entry:
-            self.copy_name()
-        elif widget == self.desc_entry:
-            self.copy_desc()
-        elif widget == self.zip_url_entry:
-            self.copy_zip_url()
-        elif widget == self.zip_name_entry:
-            self.copy_zip_name()
-        elif widget == self.image_path_entry:
-            self.copy_image_path()
-        elif widget == self.model_path_entry:
-            self.copy_model_path()
-        elif widget == self.contents_text:
-            self.copy_contents_text()
-        return "break"
         
-    def paste_to_focused(self, event=None):
-        """Вставляет текст в активное поле"""
+        if isinstance(widget, (tk.Entry, ttk.Combobox)):
+            # Для Entry и Combobox
+            if widget.select_present():
+                self.root.clipboard_clear()
+                self.root.clipboard_append(widget.selection_get())
+                
+        elif isinstance(widget, tk.Listbox):
+            # Для Listbox
+            if widget.curselection():
+                self.root.clipboard_clear()
+                self.root.clipboard_append(widget.get(widget.curselection()))
+                
+        elif isinstance(widget, (tk.Text, scrolledtext.ScrolledText)):
+            # Для Text и ScrolledText
+            try:
+                selected_text = widget.selection_get()
+                if selected_text:
+                    self.root.clipboard_clear()
+                    self.root.clipboard_append(selected_text)
+            except tk.TclError:
+                # Нет выделения
+                pass
+                
+    def paste_text(self):
+        """Вставляет текст из буфера обмена"""
         widget = self.root.focus_get()
-        if widget == self.product_id_entry:
-            self.paste_to_product_id()
-        elif widget == self.name_entry:
-            self.paste_to_name()
-        elif widget == self.desc_entry:
-            self.paste_to_desc()
-        elif widget == self.zip_url_entry:
-            self.paste_to_zip_url()
-        elif widget == self.zip_name_entry:
-            self.paste_to_zip_name()
-        elif widget == self.image_path_entry:
-            self.paste_to_image_path()
-        elif widget == self.model_path_entry:
-            self.paste_to_model_path()
-        elif widget == self.contents_text:
-            self.paste_to_contents_text()
-        return "break"
+        clipboard_text = self.root.clipboard_get()
         
-    def cut_from_focused(self, event=None):
-        """Вырезает текст из активного поля"""
-        widget = self.root.focus_get()
-        if widget == self.product_id_entry:
-            self.cut_product_id()
-        elif widget == self.name_entry:
-            self.cut_name()
-        elif widget == self.desc_entry:
-            self.cut_desc()
-        elif widget == self.zip_url_entry:
-            self.cut_zip_url()
-        elif widget == self.zip_name_entry:
-            self.cut_zip_name()
-        elif widget == self.image_path_entry:
-            self.cut_image_path()
-        elif widget == self.model_path_entry:
-            self.cut_model_path()
-        elif widget == self.contents_text:
-            self.cut_contents_text()
-        return "break"
-        
-    def select_all_in_focused(self, event=None):
-        """Выделяет весь текст в активном поле"""
-        widget = self.root.focus_get()
-        if hasattr(widget, 'select_range'):
-            widget.select_range(0, tk.END)
-        elif widget == self.contents_text:
-            widget.tag_add(tk.SEL, "1.0", tk.END)
-        return "break"
-    
-    def copy_all_form(self):
-        """Копирует все данные формы в буфер обмена как структурированный текст"""
-        form_data = {
-            "ID товара": self.product_id_var.get(),
-            "Название": self.name_var.get(),
-            "Описание": self.desc_var.get(),
-            "Ссылка Яндекс.Диск": self.zip_url_var.get(),
-            "Имя архива": self.zip_name_var.get(),
-            "Форматы": {
-                "CDW": self.cdw_var.get(),
-                "SPW": self.spw_var.get(),
-                "A3D": self.a3d_var.get(),
-                "M3D": self.m3d_var.get(),
-                "STL": self.stl_var.get(),
-                "STEP": self.step_var.get(),
-                "PDF": self.pdf_var.get(),
-                "DOC": self.doc_var.get(),
-                "XLS": self.xls_var.get(),
-                "TXT": self.txt_var.get(),
-                "EXE": self.exe_var.get()
-            },
-            "Есть 3D модель": self.has_3d_var.get(),
-            "Путь к изображению": self.image_path_var.get(),
-            "Путь к 3D модели": self.model_path_var.get(),
-            "Содержимое архива": self.contents_text.get("1.0", tk.END).strip()
-        }
-        
-        clipboard_text = "=== ДАННЫЕ ФОРМЫ ТОВАРА ===\n\n"
-        for key, value in form_data.items():
-            if isinstance(value, dict):
-                clipboard_text += f"{key}:\n"
-                for sub_key, sub_value in value.items():
-                    clipboard_text += f"  {sub_key}: {'✓' if sub_value else '✗'}\n"
-            else:
-                if key == "Содержимое архива":
-                    clipboard_text += f"{key}:\n{value}\n"
-                else:
-                    clipboard_text += f"{key}: {value}\n"
-            clipboard_text += "\n"
-        
-        self.root.clipboard_clear()
-        self.root.clipboard_append(clipboard_text)
-        messagebox.showinfo("Успех", "Все данные формы скопированы в буфер обмена!")
-    
-    def show_hotkeys(self):
-        """Показывает справку по горячим клавишам"""
-        hotkeys_info = """
-Горячие клавиши:
-
-Общие:
-Ctrl+C - Копировать из активного поля
-Ctrl+V - Вставить в активное поле
-Ctrl+X - Вырезать из активного поля
-Ctrl+A - Выделить весь текст в активном поле
-
-Контекстное меню:
-Правая кнопка мыши на любом текстовом поле - меню Копировать/Вставить
-
-В таблице товаров:
-Правая кнопка мыши - меню для копирования ID/названия
-"""
-        messagebox.showinfo("Горячие клавиши", hotkeys_info)
-        
-    def new_product(self):
-        """Создает новый товар и добавляет его в список"""
-        if not self.validate_form():
+        if not clipboard_text:
             return
             
-        product_id = self.product_id_var.get().strip()
-        if product_id in self.products:
-            messagebox.showerror("Ошибка", f"Товар с ID '{product_id}' уже существует!")
-            return
-        
-        # Копируем файлы
-        self.copy_product_files(product_id)
-        
-        # Собираем форматы
-        formats = []
-        if self.cdw_var.get(): formats.append("CDW")
-        if self.spw_var.get(): formats.append("SPW")
-        if self.a3d_var.get(): formats.append("A3D")
-        if self.m3d_var.get(): formats.append("M3D")
-        if self.stl_var.get(): formats.append("STL")
-        if self.step_var.get(): formats.append("STEP")
-        if self.pdf_var.get(): formats.append("PDF")
-        if self.doc_var.get(): formats.append("DOC")
-        if self.xls_var.get(): formats.append("XLS")
-        if self.txt_var.get(): formats.append("TXT")
-        if self.exe_var.get(): formats.append("EXE")
+        if isinstance(widget, tk.Entry):
+            # Для Entry
+            if widget.select_present():
+                widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+            widget.insert(tk.INSERT, clipboard_text)
             
-        self.products[product_id] = {
-            'name': self.name_var.get().strip(),
-            'description': self.desc_var.get().strip(),
-            'zipUrl': self.zip_url_var.get().strip(),
-            'zipName': self.zip_name_var.get().strip(),
-            'contents': [line.strip() for line in self.contents_text.get("1.0", tk.END).strip().split('\n') if line.strip()],
-            'formats': formats,
-            'has_3d': self.has_3d_var.get(),
-            'has_image': bool(self.image_path_var.get()),
-            'has_model': bool(self.model_path_var.get()) and self.has_3d_var.get()
-        }
+        elif isinstance(widget, ttk.Combobox):
+            # Для Combobox
+            widget.delete(0, tk.END)
+            widget.insert(0, clipboard_text)
+            
+        elif isinstance(widget, (tk.Text, scrolledtext.ScrolledText)):
+            # Для Text и ScrolledText
+            try:
+                if widget.selection_get():
+                    # Удаляем выделенный текст
+                    widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+            except tk.TclError:
+                pass
+            widget.insert(tk.INSERT, clipboard_text)
+            
+    def cut_text(self):
+        """Вырезает выделенный текст"""
+        widget = self.root.focus_get()
         
-        self.refresh_tree()
-        messagebox.showinfo("Успех", f"Товар '{self.name_var.get()}' добавлен!")
-        
-    def select_image(self):
-        """Выбор изображения товара"""
+        if isinstance(widget, tk.Entry):
+            # Для Entry
+            if widget.select_present():
+                self.root.clipboard_clear()
+                self.root.clipboard_append(widget.selection_get())
+                widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+                
+        elif isinstance(widget, (tk.Text, scrolledtext.ScrolledText)):
+            # Для Text и ScrolledText
+            try:
+                selected_text = widget.selection_get()
+                if selected_text:
+                    self.root.clipboard_clear()
+                    self.root.clipboard_append(selected_text)
+                    widget.delete(tk.SEL_FIRST, tk.SEL_LAST)
+            except tk.TclError:
+                # Нет выделения
+                pass
+    
+    def browse_image(self):
         filename = filedialog.askopenfilename(
-            title="Выберите изображение товара",
-            filetypes=[("Image files", "*.png *.jpg *.jpeg *.gif *.bmp"), ("All files", "*.*")]
+            title="Выберите изображение",
+            filetypes=[("Image files", "*.png *.jpg *.jpeg *.gif"), ("All files", "*.*")]
         )
         if filename:
-            self.image_path_var.set(filename)
+            dest = os.path.join("images", os.path.basename(filename))
+            if not os.path.exists("images"):
+                os.makedirs("images")
+            try:
+                shutil.copy2(filename, dest)
+                self.image_var.set(f"images/{os.path.basename(filename)}")
+            except Exception as e:
+                messagebox.showerror("Ошибка", f"Не удалось скопировать файл: {str(e)}")
             
-    def select_model(self):
-        """Выбор 3D модели"""
+    def browse_model(self):
         filename = filedialog.askopenfilename(
-            title="Выберите 3D модель (STL)",
+            title="Выберите 3D модель",
             filetypes=[("STL files", "*.stl"), ("All files", "*.*")]
         )
         if filename:
-            self.model_path_var.set(filename)
+            dest = os.path.join("models", os.path.basename(filename))
+            if not os.path.exists("models"):
+                os.makedirs("models")
+            try:
+                shutil.copy2(filename, dest)
+                self.model_var.set(f"models/{os.path.basename(filename)}")
+            except Exception as e:
+                messagebox.showerror("Ошибка", f"Не удалось скопировать файл: {str(e)}")
+    
+    def load_data(self):
+        try:
+            print("=" * 60)
+            print("ЗАГРУЗКА ДАННЫХ")
+            print("=" * 60)
             
-    def copy_product_files(self, product_id):
-        """Копирует файлы товара в соответствующие папки"""
-        # Копируем изображение
-        image_src = self.image_path_var.get()
-        if image_src and os.path.exists(image_src):
-            # Получаем расширение файла
-            ext = os.path.splitext(image_src)[1].lower()
-            # Создаем имя файла: product_id + расширение
-            image_dst = os.path.join(self.images_dir, f"{product_id}{ext}")
-            shutil.copy2(image_src, image_dst)
+            # Очищаем список удаленных товаров при загрузке
+            self.deleted_products.clear()
             
-        # Копируем 3D модель если есть
-        model_src = self.model_path_var.get()
-        if model_src and os.path.exists(model_src) and self.has_3d_var.get():
-            model_dst = os.path.join(self.models_dir, f"{product_id}.stl")
-            shutil.copy2(model_src, model_dst)
+            # Загружаем products.js с помощью eval
+            with open(self.products_js_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            print(f"📄 Прочитан products.js ({len(content)} символов)")
+            
+            # Извлекаем объект PRODUCTS_DATA
+            match = re.search(r'const PRODUCTS_DATA\s*=\s*({.*?});', content, re.DOTALL)
+            if match:
+                js_data = match.group(1)
+                print(f"🔍 Найден объект PRODUCTS_DATA ({len(js_data)} символов)")
+                
+                # Используем безопасный eval
+                self.products_data = self.safe_eval_js_object(js_data)
+                print(f"✅ Загружено {len(self.products_data)} товаров из products.js")
+                
+                # Отладочный вывод
+                for product_id, product_data in self.products_data.items():
+                    print(f"\n📦 {product_id}:")
+                    for key, value in product_data.items():
+                        if isinstance(value, list):
+                            print(f"  {key}: список из {len(value)} элементов: {value}")
+                        else:
+                            print(f"  {key}: {value}")
+            
+            # Загружаем server.js
+            with open(self.server_js_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+                
+            print(f"\n📄 Прочитан server.js ({len(content)} символов)")
+            
+            # Извлекаем объект PRODUCTS
+            match = re.search(r'const PRODUCTS\s*=\s*({.*?});', content, re.DOTALL)
+            if match:
+                js_data = match.group(1)
+                print(f"🔍 Найден объект PRODUCTS ({len(js_data)} символов)")
+                
+                # Используем безопасный eval
+                self.server_products = self.safe_eval_js_object(js_data)
+                print(f"✅ Загружено {len(self.server_products)} товаров из server.js")
+            
+            # Обновляем список
+            self.update_products_list()
+            self.status_var.set(f"Загружено {len(self.products_data)} товаров")
+            print(f"\n🎉 Загрузка завершена успешно!")
+            
+        except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
+            print(f"❌ Ошибка при загрузке данных: {error_details}")
+            messagebox.showerror("Ошибка", f"Не удалось загрузить данные:\n{str(e)}")
+    
+    def safe_eval_js_object(self, js_string):
+        """Безопасный eval для JS объектов"""
+        # Очищаем строку
+        js_string = js_string.strip()
         
-    def load_products_simple(self):
-        """Загрузка реальных товаров"""
-        self.products = {
-            "stend": {
-                "name": "Стенд для пакеров",
-                "description": "Полный комплект чертежей и 3D модель",
-                "zipUrl": "https://disk.yandex.ru/d/yavUz8k9ce2gAw/download",
-                "zipName": "stend.zip",
-                "contents": ["Чертежи КОМПАС", "3D модели КОМПАС", "Спецификации", "Паспорт, РЭ"],
-                "formats": ["CDW", "SPW", "A3D", "M3D"],
-                "has_3d": True,
-                "has_image": os.path.exists(os.path.join(self.images_dir, "stend.png")),
-                "has_model": os.path.exists(os.path.join(self.models_dir, "stend.stl"))
-            },
-            "stapel": {
-                "name": "Стапель сварочный 3х12 м",
-                "description": "Комплект чертежей + 3D модель",
-                "zipUrl": "https://disk.yandex.ru/d/Nv7iD6T5JYrKVQ/download",
-                "zipName": "stapel.zip",
-                "contents": ["Чертежи КОМПАС", "3D модели КОМПАС", "Спецификации"],
-                "formats": ["CDW", "SPW", "A3D", "M3D"],
-                "has_3d": True,
-                "has_image": os.path.exists(os.path.join(self.images_dir, "stapel.png")),
-                "has_model": os.path.exists(os.path.join(self.models_dir, "stapel.stl"))
-            },
-            "level": {
-                "name": "Уровнемер механический",
-                "description": "Для любого емкостного без давления",
-                "zipUrl": "https://disk.yandex.ru/d/79sH_E3uDXdNgw/download",
-                "zipName": "level.zip",
-                "contents": ["Сборочный чертеж", "Спецификация", "Таблица сварных соединений", "Технические требования"],
-                "formats": ["CDW"],
-                "has_3d": False,
-                "has_image": os.path.exists(os.path.join(self.images_dir, "level.png")),
-                "has_model": False
-            }
-        }
-        self.refresh_tree()
-
-    def refresh_tree(self):
-        """Обновляет дерево товаров с сохранением порядка"""
-        for item in self.tree.get_children():
-            self.tree.delete(item)
+        # Заменяем JS значения на Python
+        js_string = js_string.replace('null', 'None')
+        js_string = js_string.replace('true', 'True')
+        js_string = js_string.replace('false', 'False')
+        
+        # Убираем trailing commas
+        js_string = re.sub(r',\s*}', '}', js_string)
+        js_string = re.sub(r',\s*]', ']', js_string)
+        
+        # Обработка строк с экранированными кавычками
+        # Сначала находим все строки в кавычках и временно заменяем их
+        strings = []
+        def replace_string(match):
+            strings.append(match.group(0))
+            return f'__STRING_{len(strings)-1}__'
+        
+        # Заменяем строки в одинарных и двойных кавычках
+        js_string = re.sub(r"'([^'\\]*(?:\\.[^'\\]*)*)'", replace_string, js_string)
+        js_string = re.sub(r'"([^"\\]*(?:\\.[^"\\]*)*)"', replace_string, js_string)
+        
+        # Теперь заменяем ключи без кавычек (имена свойств JS объектов)
+        # Находим паттерны: ключ: (где ключ без кавычек)
+        pattern = r'([a-zA-Z_$][a-zA-Z0-9_$]*)\s*:'
+        
+        def add_quotes_to_key(match):
+            key = match.group(1)
+            return f'"{key}":'
+        
+        js_string = re.sub(pattern, add_quotes_to_key, js_string)
+        
+        # Восстанавливаем строки
+        for i, string in enumerate(strings):
+            js_string = js_string.replace(f'__STRING_{i}__', string)
+        
+        # Пробуем eval
+        try:
+            result = eval(js_string)
+            return result
+        except Exception as e:
+            print(f"❌ Ошибка eval: {e}")
+            print(f"📝 Очищенная строка (первые 500 символов): {js_string[:500]}")
             
-        # Сохраняем порядок из словаря products
-        for product_id, product_data in self.products.items():
-            formats = ", ".join(product_data.get('formats', []))
-            has_3d = "✅" if product_data.get('has_3d', False) else "❌"
+            # Если не сработало, пробуем ручной парсинг
+            return self.parse_js_object_manually(js_string)
+    
+    def parse_js_object_manually(self, js_string):
+        """Ручной парсинг JS объекта"""
+        result = {}
+        
+        # Убираем внешние фигурные скобки
+        js_string = js_string.strip()
+        if js_string.startswith('{'):
+            js_string = js_string[1:].rstrip('}')
+        
+        # Разбиваем на товары
+        # Ищем паттерн: "ключ": {
+        pattern = r'"([a-zA-Z0-9_]+)"\s*:\s*\{'
+        matches = list(re.finditer(pattern, js_string))
+        
+        for i, match in enumerate(matches):
+            product_id = match.group(1)
+            start_pos = match.start()
             
-            # Статус файлов
-            files_status = ""
-            if product_data.get('has_image', False):
-                files_status += "🖼️"
-            if product_data.get('has_model', False):
-                files_status += "📐"
-            if not files_status:
-                files_status = "❌"
+            # Находим конец объекта
+            end_pos = len(js_string)
+            if i < len(matches) - 1:
+                end_pos = matches[i + 1].start()
             
-            self.tree.insert("", tk.END, values=(
-                product_id,
-                product_data.get('name', ''),
-                formats,
-                has_3d,
-                files_status
-            ))
-
-    def update_product(self):
-        """Обновляет существующий товар"""
-        if not self.validate_form():
+            obj_str = js_string[start_pos:end_pos]
+            
+            # Парсим объект товара
+            product_data = self.parse_product_object(obj_str)
+            if product_data:
+                result[product_id] = product_data
+        
+        return result
+    
+    def parse_product_object(self, obj_str):
+        """Парсит объект товара"""
+        result = {}
+        
+        # Убираем "ключ": в начале
+        colon_pos = obj_str.find(':')
+        if colon_pos != -1:
+            obj_str = obj_str[colon_pos + 1:].strip()
+        
+        # Убираем внешние фигурные скобки
+        if obj_str.startswith('{'):
+            obj_str = obj_str[1:].rstrip('}')
+        
+        # Разбиваем на строки
+        lines = [line.strip() for line in obj_str.split('\n') if line.strip()]
+        
+        current_key = None
+        current_value = []
+        in_array = False
+        array_depth = 0
+        
+        for line in lines:
+            if not line:
+                continue
+            
+            # Если мы внутри массива
+            if in_array:
+                current_value.append(line)
+                array_depth += line.count('[') - line.count(']')
+                
+                if array_depth == 0 and (line.endswith('],') or line.endswith(']')):
+                    # Завершаем массив
+                    array_str = '\n'.join(current_value)
+                    parsed_array = self.parse_js_array(array_str)
+                    result[current_key] = parsed_array
+                    in_array = False
+                    current_key = None
+                    current_value = []
+                continue
+            
+            # Ищем ключ: значение
+            if ':' in line:
+                # Находим позицию первого двоеточия вне строки
+                in_string = False
+                string_char = None
+                colon_pos = -1
+                
+                for i, char in enumerate(line):
+                    if char in ['"', "'"] and (not in_string or char == string_char):
+                        in_string = not in_string
+                        if in_string:
+                            string_char = char
+                        else:
+                            string_char = None
+                    elif char == ':' and not in_string:
+                        colon_pos = i
+                        break
+                
+                if colon_pos != -1:
+                    key = line[:colon_pos].strip()
+                    value = line[colon_pos + 1:].strip()
+                    
+                    # Убираем кавычки с ключа
+                    if (key.startswith('"') and key.endswith('"')) or (key.startswith("'") and key.endswith("'")):
+                        key = key[1:-1]
+                    
+                    # Проверяем, является ли значение массивом
+                    if value.startswith('['):
+                        in_array = True
+                        array_depth = 1
+                        current_key = key
+                        current_value = [value]
+                    else:
+                        # Простое значение
+                        value = self.parse_js_value(value.rstrip(','))
+                        result[key] = value
+        
+        return result
+    
+    def parse_js_value(self, value_str):
+        """Парсит JS значение"""
+        value_str = value_str.strip().rstrip(',')
+        
+        if value_str == 'None':
+            return None
+        elif value_str == 'True':
+            return True
+        elif value_str == 'False':
+            return False
+        elif (value_str.startswith("'") and value_str.endswith("'")):
+            return value_str[1:-1]
+        elif (value_str.startswith('"') and value_str.endswith('"')):
+            return value_str[1:-1]
+        else:
+            # Пробуем как число
+            try:
+                return float(value_str) if '.' in value_str else int(value_str)
+            except:
+                return value_str
+    
+    def parse_js_array(self, array_str):
+        """Парсит JS массив"""
+        array_str = array_str.strip()
+        if not array_str.startswith('[') or not array_str.endswith(']'):
+            return []
+        
+        # Убираем скобки
+        array_str = array_str[1:-1].strip()
+        if not array_str:
+            return []
+        
+        items = []
+        current_item = ""
+        in_string = False
+        string_char = None
+        brace_depth = 0
+        bracket_depth = 0
+        
+        for char in array_str:
+            if char in ['"', "'"] and (not in_string or char == string_char):
+                in_string = not in_string
+                if in_string:
+                    string_char = char
+                else:
+                    string_char = None
+                current_item += char
+            elif char == '{':
+                brace_depth += 1
+                current_item += char
+            elif char == '}':
+                brace_depth -= 1
+                current_item += char
+            elif char == '[':
+                bracket_depth += 1
+                current_item += char
+            elif char == ']':
+                bracket_depth -= 1
+                current_item += char
+            elif char == ',' and not in_string and brace_depth == 0 and bracket_depth == 0:
+                if current_item.strip():
+                    items.append(self.parse_js_value(current_item.strip()))
+                current_item = ""
+            else:
+                current_item += char
+        
+        if current_item.strip():
+            items.append(self.parse_js_value(current_item.strip()))
+        
+        return items
+    
+    def update_products_list(self):
+        """Обновляет список товаров"""
+        self.products_listbox.delete(0, tk.END)
+        
+        if not isinstance(self.products_data, dict):
+            print("❌ Ошибка: products_data не является словарем")
+            return
+        
+        for product_id, product_data in self.products_data.items():
+            if not isinstance(product_data, dict):
+                print(f"❌ Ошибка: данные товара {product_id} не являются словарем")
+                continue
+                
+            name = product_data.get('name', 'Без названия')
+            self.products_listbox.insert(tk.END, f"{product_id}: {name[:50]}...")
+    
+    def on_product_select(self, event):
+        selection = self.products_listbox.curselection()
+        if not selection:
             return
             
+        product_id = self.products_listbox.get(selection[0]).split(":")[0].strip()
+        self.load_product_data(product_id)
+    
+    def load_product_data(self, product_id):
+        """Загружает данные выбранного товара"""
+        print(f"\n📥 Загружаем данные товара: {product_id}")
+        
+        if product_id in self.products_data:
+            product = self.products_data[product_id]
+            server_product = self.server_products.get(product_id, {})
+            
+            if not isinstance(product, dict):
+                print(f"❌ Ошибка: product не словарь для {product_id}")
+                return
+            if not isinstance(server_product, dict):
+                server_product = {}
+            
+            # Отладочный вывод ВСЕХ полей
+            print(f"📊 Данные из products.js для {product_id}:")
+            for key, value in product.items():
+                print(f"  {key}: {value}")
+            
+            print(f"\n📊 Данные из server.js для {product_id}:")
+            for key, value in server_product.items():
+                print(f"  {key}: {value}")
+            
+            # Основные параметры
+            self.product_id_var.set(product_id)
+            self.name_var.set(product.get('name', ''))
+            self.desc_text.delete(1.0, tk.END)
+            self.desc_text.insert(1.0, product.get('description', ''))
+            self.image_var.set(product.get('image', ''))
+            self.model_var.set(product.get('model', ''))
+            self.format_var.set(product.get('formatBadge', ''))
+            
+            # Файлы и ссылки
+            self.zip_url_var.set(server_product.get('zipUrl', ''))
+            self.zip_name_var.set(server_product.get('zipName', ''))
+            
+            # Ссылка на оплату и форматы
+            self.payment_url_var.set(product.get('paymentUrl', ''))
+            
+            # Форматы
+            formats = product.get('formats', [])
+            if isinstance(formats, list):
+                self.formats_var.set(', '.join(formats))
+            else:
+                self.formats_var.set(str(formats))
+            
+            # Особенности
+            self.features_text.delete(1.0, tk.END)
+            features = product.get('features', [])
+            if isinstance(features, list):
+                cleaned_features = []
+                for feature in features:
+                    if isinstance(feature, str):
+                        feature = feature.strip()
+                        cleaned_features.append(feature)
+                self.features_text.insert(1.0, '\n'.join(cleaned_features))
+            elif features:
+                self.features_text.insert(1.0, str(features))
+            
+            # Содержимое архива
+            self.contents_text.delete(1.0, tk.END)
+            contents = server_product.get('contents', [])
+            if isinstance(contents, list):
+                cleaned_contents = []
+                for content in contents:
+                    if isinstance(content, str):
+                        content = content.strip()
+                        cleaned_contents.append(content)
+                self.contents_text.insert(1.0, '\n'.join(cleaned_contents))
+            elif contents:
+                self.contents_text.insert(1.0, str(contents))
+            
+            print(f"✅ Данные товара {product_id} загружены в интерфейс")
+    
+    def save_product(self):
+        """Сохраняет текущий товар (без записи в файлы)"""
         product_id = self.product_id_var.get().strip()
-        if product_id not in self.products:
-            messagebox.showerror("Ошибка", f"Товар с ID '{product_id}' не найден!")
+        if not product_id:
+            messagebox.showwarning("Внимание", "Введите ID товара!")
             return
-        
-        # Копируем файлы
-        self.copy_product_files(product_id)
-        
-        # Собираем форматы
-        formats = []
-        if self.cdw_var.get(): formats.append("CDW")
-        if self.spw_var.get(): formats.append("SPW")
-        if self.a3d_var.get(): formats.append("A3D")
-        if self.m3d_var.get(): formats.append("M3D")
-        if self.stl_var.get(): formats.append("STL")
-        if self.step_var.get(): formats.append("STEP")
-        if self.pdf_var.get(): formats.append("PDF")
-        if self.doc_var.get(): formats.append("DOC")
-        if self.xls_var.get(): formats.append("XLS")
-        if self.txt_var.get(): formats.append("TXT")
-        if self.exe_var.get(): formats.append("EXE")
             
-        self.products[product_id] = {
+        if not re.match(r'^[a-zA-Z0-9_]+$', product_id):
+            messagebox.showwarning("Внимание", "ID должен содержать только латинские буквы, цифры и подчеркивания!")
+            return
+            
+        # Обновляем products.js данные
+        self.products_data[product_id] = {
             'name': self.name_var.get().strip(),
-            'description': self.desc_var.get().strip(),
+            'description': self.desc_text.get(1.0, tk.END).strip(),
+            'image': self.image_var.get().strip(),
+            'model': self.model_var.get().strip(),
+            'formatBadge': self.format_var.get().strip(),
+            'formats': [f.strip() for f in self.formats_var.get().split(',') if f.strip()],
+            'features': [f.strip() for f in self.features_text.get(1.0, tk.END).strip().split('\n') if f.strip()],
+            'paymentUrl': self.payment_url_var.get().strip()
+        }
+        
+        # Обновляем server.js данные
+        self.server_products[product_id] = {
+            'name': self.name_var.get().strip(),
+            'description': self.desc_text.get(1.0, tk.END).strip(),
             'zipUrl': self.zip_url_var.get().strip(),
             'zipName': self.zip_name_var.get().strip(),
-            'contents': [line.strip() for line in self.contents_text.get("1.0", tk.END).strip().split('\n') if line.strip()],
-            'formats': formats,
-            'has_3d': self.has_3d_var.get(),
-            'has_image': bool(self.image_path_var.get()) or self.products[product_id].get('has_image', False),
-            'has_model': (bool(self.model_path_var.get()) and self.has_3d_var.get()) or self.products[product_id].get('has_model', False)
+            'contents': [c.strip() for c in self.contents_text.get(1.0, tk.END).strip().split('\n') if c.strip()]
         }
         
-        self.refresh_tree()
-        messagebox.showinfo("Успех", f"Товар '{self.name_var.get()}' обновлен!")
-
+        self.update_products_list()
+        self.status_var.set(f"Товар '{product_id}' сохранен в памяти")
+        
+        # Находим и выделяем сохраненный товар в списке
+        for i in range(self.products_listbox.size()):
+            if self.products_listbox.get(i).startswith(product_id + ":"):
+                self.products_listbox.selection_clear(0, tk.END)
+                self.products_listbox.selection_set(i)
+                self.products_listbox.see(i)
+                break
+    
+    def add_product(self):
+        # Сбрасываем поля
+        self.product_id_var.set("")
+        self.name_var.set("")
+        self.desc_text.delete(1.0, tk.END)
+        self.image_var.set("")
+        self.model_var.set("")
+        self.format_var.set("CDW")
+        self.zip_url_var.set("")
+        self.zip_name_var.set("")
+        self.payment_url_var.set("")
+        self.formats_var.set("")
+        self.features_text.delete(1.0, tk.END)
+        self.contents_text.delete(1.0, tk.END)
+        
+        base_id = "new_product"
+        counter = 1
+        while f"{base_id}_{counter}" in self.products_data:
+            counter += 1
+        new_id = f"{base_id}_{counter}"
+        self.product_id_var.set(new_id)
+        
+        # Заполняем значения по умолчанию для нового товара
+        self.name_var.set(f"Новый товар {counter}")
+        self.desc_text.insert(1.0, "Описание нового товара")
+        self.image_var.set("images/default.jpg")
+        self.zip_url_var.set("https://disk.yandex.ru/d/...")
+        self.zip_name_var.set(f"product_{counter}.zip")
+        self.payment_url_var.set("https://yoomoney.ru/...")
+        self.formats_var.set("CDW, PDF, DWG")
+        
+        # Сохраняем новый товар в памяти
+        self.save_product()
+        
+        # Фокусируемся на поле названия
+        self.name_entry.focus()
+        self.name_entry.select_range(0, tk.END)
+        
+        self.status_var.set(f"Создан новый товар: {new_id}")
+    
     def duplicate_product(self):
-        """Дублирует выбранный товар вместе с файлами"""
-        selection = self.tree.selection()
+        selection = self.products_listbox.curselection()
         if not selection:
             messagebox.showwarning("Внимание", "Выберите товар для дублирования!")
             return
             
-        product_id = self.tree.item(selection[0])['values'][0]
-        product_data = self.products[product_id]
+        old_id = self.products_listbox.get(selection[0]).split(":")[0].strip()
         
-        # Создаем новый ID на основе старого
-        base_id = product_id
+        base_id = old_id + "_copy"
         counter = 1
+        while f"{base_id}_{counter}" in self.products_data:
+            counter += 1
         new_id = f"{base_id}_{counter}"
         
-        # Ищем свободный ID
-        while new_id in self.products:
-            counter += 1
-            new_id = f"{base_id}_{counter}"
+        if old_id in self.products_data:
+            # Глубокое копирование данных
+            import copy
+            self.products_data[new_id] = copy.deepcopy(self.products_data[old_id])
+            self.products_data[new_id]['name'] = f"Копия: {self.products_data[new_id]['name']}"
+            
+        if old_id in self.server_products:
+            self.server_products[new_id] = copy.deepcopy(self.server_products[old_id])
+            self.server_products[new_id]['name'] = f"Копия: {self.server_products[new_id]['name']}"
         
-        # Копируем файлы изображения
-        has_image = False
-        image_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp']
-        for ext in image_extensions:
-            old_image_path = os.path.join(self.images_dir, f"{product_id}{ext}")
-            if os.path.exists(old_image_path):
-                new_image_path = os.path.join(self.images_dir, f"{new_id}{ext}")
-                shutil.copy2(old_image_path, new_image_path)
-                has_image = True
-                break
-        
-        # Копируем файл 3D модели
-        has_model = False
-        old_model_path = os.path.join(self.models_dir, f"{product_id}.stl")
-        if os.path.exists(old_model_path) and product_data.get('has_3d', False):
-            new_model_path = os.path.join(self.models_dir, f"{new_id}.stl")
-            shutil.copy2(old_model_path, new_model_path)
-            has_model = True
-        
-        # Копируем данные товара
-        new_product_data = {
-            'name': f"{product_data['name']} (копия {counter})",
-            'description': product_data['description'],
-            'zipUrl': product_data['zipUrl'],
-            'zipName': product_data['zipName'],
-            'contents': product_data['contents'][:],
-            'formats': product_data['formats'][:],
-            'has_3d': product_data.get('has_3d', False),
-            'has_image': has_image,
-            'has_model': has_model
-        }
-        
-        # Добавляем новый товар
-        self.products[new_id] = new_product_data
-        
-        # Обновляем дерево и очищаем форму
-        self.refresh_tree()
-        self.clear_form()
-        
-        messagebox.showinfo("Успех", f"Товар '{product_data['name']}' продублирован как '{new_id}'!")
-
-        # Автоматически заполняем форму для редактирования нового товара
-        self.product_id_var.set(new_id)
-        self.name_var.set(new_product_data['name'])
-        self.desc_var.set(new_product_data['description'])
-        self.zip_url_var.set(new_product_data['zipUrl'])
-        self.zip_name_var.set(new_product_data['zipName'])
-        
-        # Устанавливаем форматы
-        formats = new_product_data['formats']
-        self.cdw_var.set("CDW" in formats)
-        self.spw_var.set("SPW" in formats)
-        self.a3d_var.set("A3D" in formats)
-        self.m3d_var.set("M3D" in formats)
-        self.stl_var.set("STL" in formats)
-        
-        # Устанавливаем 3D модель
-        self.has_3d_var.set(new_product_data['has_3d'])
-        
-        # Показываем статус файлов
-        if has_image:
-            self.image_path_var.set("(файл скопирован)")
-        if has_model:
-            self.model_path_var.set("(файл скопирован)")
-        
-        self.contents_text.delete("1.0", tk.END)
-        self.contents_text.insert("1.0", '\n'.join(new_product_data['contents']))
-
+        self.update_products_list()
+        self.load_product_data(new_id)
+        self.status_var.set(f"Товар '{old_id}' дублирован как '{new_id}'")
+    
     def delete_product(self):
-        """Удаляет выбранный товар"""
-        selection = self.tree.selection()
+        selection = self.products_listbox.curselection()
         if not selection:
             messagebox.showwarning("Внимание", "Выберите товар для удаления!")
             return
             
-        product_id = self.tree.item(selection[0])['values'][0]
-        product_name = self.products[product_id]['name']
+        product_id = self.products_listbox.get(selection[0]).split(":")[0].strip()
         
-        if messagebox.askyesno("Подтверждение", f"Удалить товар '{product_name}'?"):
-            # Удаляем файлы товара
-            image_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp']
-            for ext in image_extensions:
-                image_path = os.path.join(self.images_dir, f"{product_id}{ext}")
-                if os.path.exists(image_path):
-                    os.remove(image_path)
-                    
-            model_path = os.path.join(self.models_dir, f"{product_id}.stl")
-            if os.path.exists(model_path):
-                os.remove(model_path)
+        if messagebox.askyesno("Подтверждение", f"Вы уверены, что хотите удалить товар '{product_id}'?"):
+            # Добавляем товар в список удаленных
+            self.deleted_products.add(product_id)
             
-            del self.products[product_id]
-            self.refresh_tree()
-            self.clear_form()
-            messagebox.showinfo("Успех", f"Товар '{product_name}' удален!")
-
-    def edit_product(self):
-        """Редактирует выбранный товар"""
-        selection = self.tree.selection()
-        if not selection:
-            messagebox.showwarning("Внимание", "Выберите товар для редактирования!")
+            # Удаляем из данных в памяти
+            if product_id in self.products_data:
+                del self.products_data[product_id]
+            
+            if product_id in self.server_products:
+                del self.server_products[product_id]
+            
+            # Обновляем список
+            self.update_products_list()
+            
+            # Очищаем поля редактирования
+            self.product_id_var.set("")
+            self.name_var.set("")
+            self.desc_text.delete(1.0, tk.END)
+            self.image_var.set("")
+            self.model_var.set("")
+            self.format_var.set("")
+            self.zip_url_var.set("")
+            self.zip_name_var.set("")
+            self.payment_url_var.set("")
+            self.formats_var.set("")
+            self.features_text.delete(1.0, tk.END)
+            self.contents_text.delete(1.0, tk.END)
+            
+            self.status_var.set(f"Товар '{product_id}' помечен на удаление")
+    
+    def move_up(self):
+        selection = self.products_listbox.curselection()
+        if not selection or selection[0] == 0:
             return
             
-        product_id = self.tree.item(selection[0])['values'][0]
-        product_data = self.products[product_id]
+        idx = selection[0]
+        product_id = self.products_listbox.get(idx).split(":")[0].strip()
         
-        self.clear_form()
-        
-        self.product_id_var.set(product_id)
-        self.name_var.set(product_data['name'])
-        self.desc_var.set(product_data['description'])
-        self.zip_url_var.set(product_data['zipUrl'])
-        self.zip_name_var.set(product_data['zipName'])
-        
-        # Устанавливаем форматы
-        formats = product_data.get('formats', [])
-        self.cdw_var.set("CDW" in formats)
-        self.spw_var.set("SPW" in formats)
-        self.a3d_var.set("A3D" in formats)
-        self.m3d_var.set("M3D" in formats)
-        self.stl_var.set("STL" in formats)
-        self.step_var.set("STEP" in formats)
-        self.pdf_var.set("PDF" in formats)
-        self.doc_var.set("DOC" in formats)
-        self.xls_var.set("XLS" in formats)
-        self.txt_var.set("TXT" in formats)
-        self.exe_var.set("EXE" in formats)
-        
-        # Устанавливаем 3D модель
-        self.has_3d_var.set(product_data.get('has_3d', False))
-        
-        # Показываем существующие файлы
-        if product_data.get('has_image', False):
-            self.image_path_var.set("(файл уже загружен)")
-        if product_data.get('has_model', False):
-            self.model_path_var.set("(файл уже загружен)")
-        
-        self.contents_text.delete("1.0", tk.END)
-        self.contents_text.insert("1.0", '\n'.join(product_data['contents']))
-
-    def clear_form(self):
-        """Очищает форму"""
-        self.product_id_var.set("")
-        self.name_var.set("")
-        self.desc_var.set("")
-        self.zip_url_var.set("")
-        self.zip_name_var.set("")
-        self.cdw_var.set(True)
-        self.spw_var.set(True)
-        self.a3d_var.set(True)
-        self.m3d_var.set(True)
-        self.stl_var.set(False)
-        self.step_var.set(False)
-        self.pdf_var.set(False)
-        self.doc_var.set(False)
-        self.xls_var.set(False)
-        self.txt_var.set(False)
-        self.exe_var.set(False)
-        self.has_3d_var.set(False)
-        self.image_path_var.set("")
-        self.model_path_var.set("")
-        self.contents_text.delete("1.0", tk.END)
-
-    def validate_form(self):
-        """Проверяет заполнение формы"""
-        if not all([self.product_id_var.get().strip(),
-                   self.name_var.get().strip(),
-                   self.desc_var.get().strip(),
-                   self.zip_url_var.get().strip(),
-                   self.zip_name_var.get().strip()]):
-            messagebox.showerror("Ошибка", "Заполните все обязательные поля!")
-            return False
-            
-        # Проверяем что выбран файл изображения для нового товара
-        selection = self.tree.selection()
-        if not selection and not self.image_path_var.get():
-            if not messagebox.askyesno("Подтверждение", "Изображение товара не выбрано. Продолжить без изображения?"):
-                return False
+        product_ids = list(self.products_data.keys())
+        if product_id in product_ids:
+            current_idx = product_ids.index(product_id)
+            if current_idx > 0:
+                product_ids[current_idx], product_ids[current_idx-1] = product_ids[current_idx-1], product_ids[current_idx]
                 
-        return True
-
-    def on_tree_select(self, event):
-        """Обработчик выбора товара в дереве"""
-        selection = self.tree.selection()
-        if selection:
-            self.edit_product()
-
-    def update_index_html(self):
-        """Обновляет index.html с новыми товарами"""
+                new_products_data = {}
+                new_server_products = {}
+                
+                for pid in product_ids:
+                    if pid in self.products_data:
+                        new_products_data[pid] = self.products_data[pid]
+                    if pid in self.server_products:
+                        new_server_products[pid] = self.server_products[pid]
+                
+                self.products_data = new_products_data
+                self.server_products = new_server_products
+                
+                self.update_products_list()
+                self.products_listbox.selection_set(idx-1)
+                self.status_var.set(f"Товар '{product_id}' перемещен вверх")
+    
+    def move_down(self):
+        selection = self.products_listbox.curselection()
+        if not selection or selection[0] == self.products_listbox.size() - 1:
+            return
+            
+        idx = selection[0]
+        product_id = self.products_listbox.get(idx).split(":")[0].strip()
+        
+        product_ids = list(self.products_data.keys())
+        if product_id in product_ids:
+            current_idx = product_ids.index(product_id)
+            if current_idx < len(product_ids) - 1:
+                product_ids[current_idx], product_ids[current_idx+1] = product_ids[current_idx+1], product_ids[current_idx]
+                
+                new_products_data = {}
+                new_server_products = {}
+                
+                for pid in product_ids:
+                    if pid in self.products_data:
+                        new_products_data[pid] = self.products_data[pid]
+                    if pid in self.server_products:
+                        new_server_products[pid] = self.server_products[pid]
+                
+                self.products_data = new_products_data
+                self.server_products = new_server_products
+                
+                self.update_products_list()
+                self.products_listbox.selection_set(idx+1)
+                self.status_var.set(f"Товар '{product_id}' перемещен вниз")
+    
+    def generate_contents(self):
+        features = self.features_text.get(1.0, tk.END).strip().split('\n')
+        if features:
+            self.contents_text.delete(1.0, tk.END)
+            self.contents_text.insert(1.0, '\n'.join(features))
+    
+    def save_all(self):
+        """Сохраняет все изменения в файлы"""
         try:
-            if not os.path.exists(self.index_html_path):
-                messagebox.showerror("Ошибка", f"Файл {self.index_html_path} не найден!")
-                return
+            # Сначала сохраняем текущий товар (если он редактировался)
+            current_id = self.product_id_var.get().strip()
+            if current_id and current_id not in self.deleted_products:
+                self.save_product()
             
-            with open(self.index_html_path, 'r', encoding='utf-8') as f:
-                content = f.read()
+            # Создаем резервные копии
+            import datetime
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             
-            # Генерируем HTML для товаров
-            products_html = self.generate_products_html()
+            for filepath in [self.products_js_path, self.server_js_path]:
+                if os.path.exists(filepath):
+                    backup_path = f"{filepath}.backup_{timestamp}"
+                    try:
+                        shutil.copy2(filepath, backup_path)
+                        print(f"📁 Создана резервная копия: {backup_path}")
+                    except Exception as e:
+                        print(f"❌ Не удалось создать резервную копию {filepath}: {e}")
             
-            # Заменяем блок с товарами
-            new_content = re.sub(
-                r'<div class="products-grid">.*?</div>\s*<!-- Модальное окно формы заказа -->',
-                f'<div class="products-grid">\n{products_html}\n    </div>\n\n    <!-- Модальное окно формы заказа -->',
-                content,
-                flags=re.DOTALL
-            )
+            # Удаляем товары, помеченные на удаление
+            # Фильтруем данные, исключая удаленные товары
+            filtered_products_data = {k: v for k, v in self.products_data.items() 
+                                     if k not in self.deleted_products}
+            filtered_server_products = {k: v for k, v in self.server_products.items() 
+                                       if k not in self.deleted_products}
             
-            # Обновляем объект PRODUCT_NAMES в JavaScript
-            product_names_js = self.generate_product_names_js()
-            new_content = re.sub(
-                r'const PRODUCT_NAMES = {.*?};',
-                f'const PRODUCT_NAMES = {product_names_js};',
-                new_content,
-                flags=re.DOTALL
-            )
+            # Очищаем список удаленных после сохранения
+            self.deleted_products.clear()
             
-            # Обновляем объект PRODUCT_URLS в JavaScript
-            product_urls_js = self.generate_product_urls_js()
-            new_content = re.sub(
-                r'const PRODUCT_URLS = {.*?};',
-                f'const PRODUCT_URLS = {product_urls_js};',
-                new_content,
-                flags=re.DOTALL
-            )
+            # Сохраняем products.js
+            self.save_products_js(filtered_products_data)
             
-            with open(self.index_html_path, 'w', encoding='utf-8') as f:
-                f.write(new_content)
+            # Сохраняем server.js
+            self.save_server_js(filtered_server_products)
             
-            messagebox.showinfo("Успех", "index.html успешно обновлен!")
+            # Обновляем внутренние данные
+            self.products_data = filtered_products_data
+            self.server_products = filtered_server_products
+            
+            # Обновляем список товаров
+            self.update_products_list()
+            
+            self.status_var.set(f"✅ Все изменения сохранены в {len(self.products_data)} товаров")
+            messagebox.showinfo("Сохранено", "Все изменения успешно сохранены!\n\nСозданы резервные копии файлов.")
             
         except Exception as e:
-            messagebox.showerror("Ошибка", f"Не удалось обновить index.html: {str(e)}")
-
-    def generate_product_names_js(self):
-        """Генерирует JS код для названий товаров"""
-        names_js = "{\n"
-        for product_id, product_data in self.products.items():
-            names_js += f"    {product_id}: '{product_data['name']}',\n"
-        names_js += "}"
-        return names_js
-
-    def generate_product_urls_js(self):
-        """Генерирует JS код для URL товаров"""
-        urls_js = "{\n"
-        for product_id in self.products.keys():
-            # Генерируем URL для ЮMoney с правильной суммой (100 рублей = 10000 копеек)
-            url = f"https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label={product_id}"
-            urls_js += f"    {product_id}: '{url}',\n"
-        urls_js += "}"
-        return urls_js
-
-    def generate_products_html(self):
-        """Генерирует HTML код для товаров"""
-        html_parts = []
+            import traceback
+            error_details = traceback.format_exc()
+            print(f"❌ Ошибка при сохранении: {error_details}")
+            messagebox.showerror("Ошибка", f"Не удалось сохранить данные:\n{str(e)}")
+    
+    def save_products_js(self, products_data):
+        """Сохраняет данные в products.js"""
+        print("💾 Сохраняем products.js...")
         
-        for product_id, product_data in self.products.items():
-            has_3d = product_data.get('has_3d', False)
-            formats = product_data.get('formats', [])
-            has_image = product_data.get('has_image', False)
+        products_js = """// products.js
+
+// Данные товаров для генерации карточек и микроразметки
+const PRODUCTS_DATA = {
+"""
+        
+        for i, (product_id, product) in enumerate(products_data.items()):
+            products_js += f"    {product_id}: {{\n"
+            products_js += f"        name: \"{product['name']}\",\n"
+            products_js += f"        description: \"{product['description']}\",\n"
+            products_js += f"        image: \"{product['image']}\",\n"
             
-            formats_html = ''.join([f'<span class="format-tag">{fmt}</span>' for fmt in formats])
-            features_html = ''.join([f'<li>{feature}</li>' for feature in product_data['contents']])
-            
-            # Определяем основной формат для бейджа
-            main_format = "STL" if has_3d else ("CDW" if "CDW" in formats else formats[0] if formats else "CDW")
-            indicator_text = "3D просмотр" if has_3d else "Изображение"
-            
-            # Если есть изображение - показываем его, иначе placeholder
-            if has_image:
-                image_content = f'<img src="images/{product_id}.png" alt="{product_data["name"]}">'
+            if not product['model']:
+                products_js += f"        model: null,\n"
             else:
-                image_content = f'<div style="font-size:3em;">📐</div>'
+                products_js += f"        model: \"{product['model']}\",\n"
             
-            product_html = f"""        <div class="product-card">
-            <div class="product-image" data-image="images/{product_id}.png" {"data-model=\"models/" + product_id + ".stl\"" if has_3d else ""}>
-                {image_content}
-                <div class="format-badge">{main_format}</div>
-                <div class="model-indicator">{indicator_text}</div>
+            products_js += f"        formatBadge: \"{product['formatBadge']}\",\n"
+            products_js += f"        formats: {json.dumps(product['formats'], ensure_ascii=False)},\n"
+            products_js += f"        features: {json.dumps(product['features'], ensure_ascii=False)},\n"
+            products_js += f"        paymentUrl: '{product['paymentUrl']}'\n"
+            products_js += "    }"
+            if i < len(products_data) - 1:
+                products_js += ","
+            products_js += "\n"
+        
+        products_js += """};
+
+// Функция для генерации HTML карточек товаров
+function generateProductsHTML() {
+    const productsGrid = document.querySelector('.products-grid');
+    if (!productsGrid) return;
+    
+    let html = '';
+    
+    for (const [productId, product] of Object.entries(PRODUCTS_DATA)) {
+        const hasModel = product.model !== null;
+        
+        html += `
+        <div class="product-card">
+            <div class="product-image" data-image="${product.image}" ${hasModel ? `data-model="${product.model}"` : ''} tabindex="0" role="button" aria-label="Просмотр ${product.name}">
+                <img src="${product.image}" alt="${product.name}" loading="lazy">
+                <div class="format-badge">${product.formatBadge}</div>
+                <div class="model-indicator">${hasModel ? '3D просмотр' : 'Изображение'}</div>
             </div>
-            <div class="product-title">{product_data['name']}</div>
-            <div class="product-description">{product_data['description']}</div>
+            <div class="product-title">${product.name}</div>
+            <div class="product-description">${product.description}</div>
             <div class="formats-list">
-                {formats_html}
+                ${product.formats.map(format => `<span class="format-tag">${format}</span>`).join('')}
             </div>
             <ul class="product-features">
-                {features_html}
+                ${product.features.map(feature => `<li>${feature}</li>`).join('')}
             </ul>
-            <button class="buy-button" data-product="{product_id}">
+            <button class="buy-button" data-product="${productId}" aria-label="Купить ${product.name} за 100 рублей">
                 Купить за 100 руб.
             </button>
-        </div>"""
-            
-            html_parts.append(product_html)
-        
-        return '\n\n'.join(html_parts)
+        </div>
+        `;
+    }
+    
+    productsGrid.innerHTML = html;
+}
 
-    def update_server_js(self):
-        """Обновляет server.js с новыми товарами"""
-        try:
-            if not os.path.exists(self.server_js_path):
-                messagebox.showerror("Ошибка", f"Файл {self.server_js_path} не найден!")
-                return
-            
-            with open(self.server_js_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-            
-            # Генерируем JS код для товаров
-            products_js = self.generate_products_js()
-            
-            # Заменяем блок PRODUCTS
-            new_content = re.sub(
-                r'const PRODUCTS = {.*?};',
-                f'const PRODUCTS = {products_js};',
-                content,
-                flags=re.DOTALL
-            )
-            
-            with open(self.server_js_path, 'w', encoding='utf-8') as f:
-                f.write(new_content)
-            
-            messagebox.showinfo("Успех", "server.js успешно обновлен!")
-            
-        except Exception as e:
-            messagebox.showerror("Ошибка", f"Не удалось обновить server.js: {str(e)}")
-
-    def generate_products_js(self):
-        """Генерирует JS код для товаров"""
-        products_js = "{\n"
-        
-        for product_id, product_data in self.products.items():
-            # Для server.js нам не нужны форматы и has_3d
-            server_data = {
-                'name': product_data['name'],
-                'description': product_data['description'],
-                'zipUrl': product_data['zipUrl'],
-                'zipName': product_data['zipName'],
-                'contents': product_data['contents']
+// Функция для генерации данных для микроразметки
+function generateProductStructuredData() {
+    const productsData = [];
+    
+    for (const [productId, product] of Object.entries(PRODUCTS_DATA)) {
+        const productMarkup = {
+            "@context": "https://schema.org/",
+            "@type": "Product",
+            "name": product.name,
+            "description": product.description,
+            "image": `https://fixcad.ru/${product.image}`,
+            "offers": {
+                "@type": "Offer",
+                "price": "100",
+                "priceCurrency": "RUB",
+                "availability": "https://schema.org/InStock"
+            },
+            "brand": {
+                "@type": "Brand",
+                "name": "FIXCAD MARKET"
             }
-            
-            contents_js = "[\n      " + ",\n      ".join([f"'{item}'" for item in server_data['contents']]) + "\n    ]"
-            
-            product_js = f"""  {product_id}: {{
-    name: '{server_data['name']}',
-    description: '{server_data['description']}',
-    zipUrl: '{server_data['zipUrl']}',
-    zipName: '{server_data['zipName']}',
-    contents: {contents_js}
-  }},"""
-            products_js += product_js + "\n"
-        
-        products_js += "}"
-        return products_js
+        };
+        productsData.push(productMarkup);
+    }
+    
+    return productsData;
+}
 
-    def update_both(self):
-        """Обновляет оба файла"""
-        self.update_server_js()
-        self.update_index_html()
-        messagebox.showinfo("Успех", "Оба файла успешно обновлены!")
+// Функция для получения URL оплаты
+function getPaymentUrl(productId) {
+    return PRODUCTS_DATA[productId]?.paymentUrl || '';
+}
 
-    def move_up(self):
-        """Перемещает выбранный товар вверх"""
-        selection = self.tree.selection()
-        if not selection:
-            return
-            
-        current_index = self.tree.index(selection[0])
-        if current_index == 0:
-            return
-        
-        # Получаем список всех товаров в порядке отображения
-        product_ids = list(self.products.keys())
-        
-        # Меняем местами текущий товар с предыдущим
-        product_ids[current_index], product_ids[current_index - 1] = product_ids[current_index - 1], product_ids[current_index]
-        
-        # Создаем новый упорядоченный словарь
-        new_products = {}
-        for pid in product_ids:
-            new_products[pid] = self.products[pid]
-        
-        self.products = new_products
-        self.refresh_tree()
-        
-        # Выделяем перемещенный товар
-        items = self.tree.get_children()
-        if items and current_index - 1 < len(items):
-            self.tree.selection_set(items[current_index - 1])
+// Функция для получения названия товара
+function getProductName(productId) {
+    return PRODUCTS_DATA[productId]?.name || '';
+}
 
-    def move_down(self):
-        """Перемещает выбранный товар вниз"""
-        selection = self.tree.selection()
-        if not selection:
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    generateProductsHTML();
+    
+    // Добавляем микроразметку
+    const productsData = generateProductStructuredData();
+    productsData.forEach(markup => {
+        const script = document.createElement('script');
+        script.type = 'application/ld+json';
+        script.textContent = JSON.stringify(markup);
+        document.head.appendChild(script);
+    });
+});
+"""
+        
+        with open(self.products_js_path, 'w', encoding='utf-8') as f:
+            f.write(products_js)
+        print(f"✅ products.js сохранен ({len(products_data)} товаров)")
+    
+    def save_server_js(self, server_products):
+        """Сохраняет данные в server.js"""
+        print("💾 Сохраняем server.js...")
+        
+        with open(self.server_js_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        start_match = re.search(r'const PRODUCTS\s*=\s*\{', content)
+        if not start_match:
+            messagebox.showerror("Ошибка", "Не найден объект PRODUCTS в server.js")
             return
-            
-        current_index = self.tree.index(selection[0])
-        items = self.tree.get_children()
         
-        if current_index == len(items) - 1:
+        start_idx = start_match.start()
+        text_after_start = content[start_idx:]
+        
+        brace_count = 0
+        end_idx = 0
+        
+        for i, char in enumerate(text_after_start):
+            if char == '{':
+                brace_count += 1
+            elif char == '}':
+                brace_count -= 1
+                if brace_count == 0:
+                    end_idx = start_idx + i + 1
+                    break
+        
+        if end_idx == 0:
+            messagebox.showerror("Ошибка", "Не удалось найти конец объекта PRODUCTS")
             return
         
-        # Получаем список всех товаров в порядке отображения
-        product_ids = list(self.products.keys())
+        new_products = "const PRODUCTS = {\n"
         
-        # Меняем местами текущий товар со следующим
-        product_ids[current_index], product_ids[current_index + 1] = product_ids[current_index + 1], product_ids[current_index]
+        for i, (product_id, product) in enumerate(server_products.items()):
+            new_products += f"  {product_id}: {{\n"
+            new_products += f"    name: '{product['name']}',\n"
+            new_products += f"    description: '{product['description']}',\n"
+            new_products += f"    zipUrl: '{product['zipUrl']}',\n"
+            new_products += f"    zipName: '{product['zipName']}',\n"
+            new_products += f"    contents: {json.dumps(product['contents'], ensure_ascii=False)}\n"
+            new_products += "  }"
+            if i < len(server_products) - 1:
+                new_products += ","
+            new_products += "\n"
         
-        # Создаем новый упорядоченный словарь
-        new_products = {}
-        for pid in product_ids:
-            new_products[pid] = self.products[pid]
+        new_products += "};\n"
         
-        self.products = new_products
-        self.refresh_tree()
+        new_content = content[:start_idx] + new_products + content[end_idx:]
         
-        # Выделяем перемещенный товар
-        items = self.tree.get_children()
-        if items and current_index + 1 < len(items):
-            self.tree.selection_set(items[current_index + 1])
+        with open(self.server_js_path, 'w', encoding='utf-8') as f:
+            f.write(new_content)
+        print(f"✅ server.js сохранен ({len(server_products)} товаров)")
+    
+    def show_instructions(self):
+        instructions = """
+═══════════════════════════════════════════════════════════════
+                    ИНСТРУКЦИЯ ПО ИСПОЛЬЗОВАНИЮ
+═══════════════════════════════════════════════════════════════
+
+1. 📦 ЗАГРУЗКА ДАННЫХ
+   • Нажмите "🔄 Обновить данные"
+   • Программа использует улучшенный парсинг JS объектов
+
+2. ➕ ДОБАВЛЕНИЕ ТОВАРА
+   • Нажмите "➕ Добавить товар"
+   • Автоматически создается товар с заполненными полями по умолчанию
+   • Отредактируйте поля и сохраните
+
+3. ✏️ РЕДАКТИРОВАНИЕ ТОВАРА
+   • Основные: название, описание, изображение, 3D модель
+   • Файлы: ВСЕ ссылки и форматы файлов
+   • Дополнительно: особенности и содержимое архива
+
+4. 📋 КОНТЕКСТНОЕ МЕНЮ
+   • Правый клик в любом поле редактирования:
+     - Копировать (Ctrl+C)
+     - Вставить (Ctrl+V) 
+     - Вырезать (Ctrl+X)
+   • Работает со ВСЕМИ полями, включая "Особенности" и "Содержимое"
+
+5. 🔄 УПРАВЛЕНИЕ СПИСКОМ
+   • ⬆️/⬇️ - переместить товар вверх/вниз
+   • 📋 - создать копию товара
+   • 🗑️ - удалить товар (нужно сохранить изменения)
+
+6. 💾 СОХРАНЕНИЕ
+   • "💾 Сохранить товар" - сохраняет изменения текущего товара
+   • "💾 Сохранить все" - сохраняет ВСЕ изменения в файлы
+   • Автоматически создаются резервные копии
+   • Удаленные товары не сохраняются в файлы
+
+⚠️ ВАЖНО: Удаленные товары окончательно удаляются только после
+сохранения всех изменений ("💾 Сохранить все")
+
+═══════════════════════════════════════════════════════════════
+        Для вопросов: irashitov79@mail.ru | FIXCAD MARKET
+═══════════════════════════════════════════════════════════════
+        """
+        
+        instr_window = tk.Toplevel(self.root)
+        instr_window.title("Инструкция")
+        instr_window.geometry("800x600")
+        instr_window.minsize(800, 600)  # Делаем и окно инструкции неуменьшаемым
+        
+        # Делаем растягиваемым
+        instr_window.grid_rowconfigure(0, weight=1)
+        instr_window.grid_columnconfigure(0, weight=1)
+        
+        text_widget = scrolledtext.ScrolledText(instr_window, wrap=tk.WORD, 
+                                               font=("Courier", 10))
+        text_widget.grid(row=0, column=0, sticky=tk.NSEW, padx=10, pady=10)
+        text_widget.insert(1.0, instructions)
+        text_widget.config(state=tk.DISABLED)
+        
+        button_frame = tk.Frame(instr_window)
+        button_frame.grid(row=1, column=0, pady=10)
+        tk.Button(button_frame, text="Закрыть", command=instr_window.destroy,
+                 bg=self.accent_color, fg="white", padx=20, pady=5).pack()
 
 def main():
     root = tk.Tk()
