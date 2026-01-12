@@ -470,7 +470,7 @@ class ProductManager:
             strings.append(match.group(0))
             return f'__STRING_{len(strings)-1}__'
         
-        # Заменяем строки в одинарных и двойных кавычках
+        # Заменяем строкы в одинарных и двойных кавычках
         js_string = re.sub(r"'([^'\\]*(?:\\.[^'\\]*)*)'", replace_string, js_string)
         js_string = re.sub(r'"([^"\\]*(?:\\.[^"\\]*)*)"', replace_string, js_string)
         
@@ -1063,6 +1063,7 @@ const PRODUCTS_DATA = {
             products_js += f"        description: \"{product['description']}\",\n"
             products_js += f"        image: \"{product['image']}\",\n"
             
+            # ИСПРАВЛЕНИЕ: используем null вместо "None" для пустой модели
             if not product['model']:
                 products_js += f"        model: null,\n"
             else:

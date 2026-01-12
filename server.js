@@ -56,6 +56,11 @@ const PRODUCTS = {
 ;
 ;
 ;
+;
+;
+;
+;
+;
 
 // Настройка Mail.ru транспорта
 const transporter = nodemailer.createTransport({
