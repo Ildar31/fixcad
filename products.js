@@ -36,7 +36,7 @@ const PRODUCTS_DATA = {
         name: "Уровнемер механический поплавковый",
         description: "Для любого емкостного оборудования без давления. Версия Компас 18.1",
         image: "images/level.png",
-        model: "None",
+        model: null,
         formatBadge: "CDW",
         formats: ["CDW", "TXT"],
         features: ["Сборочный чертеж", "Спецификация", "Таблица сварных соединений", "Технические требования"],
