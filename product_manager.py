@@ -734,7 +734,13 @@ class ProductManager:
             self.desc_text.delete(1.0, tk.END)
             self.desc_text.insert(1.0, product.get('description', ''))
             self.image_var.set(product.get('image', ''))
-            self.model_var.set(product.get('model', ''))
+            
+            # ИСПРАВЛЕНИЕ: преобразуем None в пустую строку для поля модели
+            model_value = product.get('model', '')
+            if model_value is None:
+                model_value = ''
+            self.model_var.set(model_value)
+            
             self.format_var.set(product.get('formatBadge', ''))
             
             # Файлы и ссылки
@@ -778,7 +784,7 @@ class ProductManager:
                 self.contents_text.insert(1.0, str(contents))
             
             print(f"✅ Данные товара {product_id} загружены в интерфейс")
-    
+
     def save_product(self):
         """Сохраняет текущий товар (без записи в файлы)"""
         product_id = self.product_id_var.get().strip()
@@ -789,13 +795,18 @@ class ProductManager:
         if not re.match(r'^[a-zA-Z0-9_]+$', product_id):
             messagebox.showwarning("Внимание", "ID должен содержать только латинские буквы, цифры и подчеркивания!")
             return
+        
+        # Получаем значение модели и преобразуем пустую строку в None
+        model_value = self.model_var.get().strip()
+        if not model_value:
+            model_value = None
             
         # Обновляем products.js данные
         self.products_data[product_id] = {
             'name': self.name_var.get().strip(),
             'description': self.desc_text.get(1.0, tk.END).strip(),
             'image': self.image_var.get().strip(),
-            'model': self.model_var.get().strip(),
+            'model': model_value,  # Здесь будет None или путь к модели
             'formatBadge': self.format_var.get().strip(),
             'formats': [f.strip() for f in self.formats_var.get().split(',') if f.strip()],
             'features': [f.strip() for f in self.features_text.get(1.0, tk.END).strip().split('\n') if f.strip()],
