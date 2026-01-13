@@ -39,8 +39,17 @@ const PRODUCTS = {
     zipUrl: 'https://disk.yandex.ru/d/79sH_E3uDXdNgw/download',
     zipName: 'level.zip',
     contents: ["Сборочный чертеж", "Спецификация", "Таблица сварных соединений", "Технические требования"]
+  },
+  freza: {
+    name: 'Торцевая фреза с механическим креплением сменных многогранных пластин (СМП)',
+    description: '3D модель: файлы в версии Компас 21',
+    zipUrl: 'https://disk.yandex.ru/d/Vzko94j5NanGMg/download',
+    zipName: 'freza.zip',
+    contents: ["3D модели КОМПАС", "Описание"]
   }
 };
+;
+;
 ;
 ;
 ;

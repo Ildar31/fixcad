@@ -41,6 +41,16 @@ const PRODUCTS_DATA = {
         formats: ["CDW", "TXT"],
         features: ["Сборочный чертеж", "Спецификация", "Таблица сварных соединений", "Технические требования"],
         paymentUrl: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=level'
+    },
+    freza: {
+        name: "Торцевая фреза с механическим креплением сменных многогранных пластин (СМП)",
+        description: "3D модель: файлы в версии Компас 21",
+        image: "images/freza.png",
+        model: "models/freza.stl",
+        formatBadge: "STL",
+        formats: ["A3D", "M3D", "TXT"],
+        features: ["3D модели КОМПАС", "Описание"],
+        paymentUrl: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=freza'
     }
 };
 
