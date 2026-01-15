@@ -51,6 +51,16 @@ const PRODUCTS_DATA = {
         formats: ["A3D", "M3D", "TXT"],
         features: ["3D модели КОМПАС", "Описание"],
         paymentUrl: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=freza'
+    },
+    apidomik: {
+        name: "Апидомик на 8 ульев 3х5 м (павильон для апитерапии)",
+        description: "Чертеж Компас 18.1 и модель STEP",
+        image: "images/apidomik.png",
+        model: "models/apidomik.stl",
+        formatBadge: "STL",
+        formats: ["CDW", "STP"],
+        features: ["Габаритный чертеж", "Файл STEP", "Полная детализация", "Ульи с рамками"],
+        paymentUrl: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=apidomik'
     }
 };
 

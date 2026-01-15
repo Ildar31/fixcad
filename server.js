@@ -46,8 +46,17 @@ const PRODUCTS = {
     zipUrl: 'https://disk.yandex.ru/d/Vzko94j5NanGMg/download',
     zipName: 'freza.zip',
     contents: ["3D модели КОМПАС", "Описание"]
+  },
+  apidomik: {
+    name: 'Апидомик на 8 ульев 3х5 м (павильон для апитерапии)',
+    description: 'Чертеж Компас 18.1 и модель STEP',
+    zipUrl: 'https://disk.yandex.ru/d/x-xoLOFzicx3uQ/download',
+    zipName: 'apidomik.zip',
+    contents: ["Габаритный чертеж", "Файл STEP", "Полная детализация", "Ульи с рамками"]
   }
 };
+;
+;
 ;
 ;
 ;
