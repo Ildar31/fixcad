@@ -53,32 +53,15 @@ const PRODUCTS = {
     zipUrl: 'https://disk.yandex.ru/d/x-xoLOFzicx3uQ/download',
     zipName: 'apidomik.zip',
     contents: ["Габаритный чертеж", "Файл STEP", "Полная детализация", "Ульи с рамками"]
+  },
+  vanna: {
+    name: 'Моечная ванна для технологической очистки оборудования',
+    description: 'Стальная сварная емкость со столом и сливным краном',
+    zipUrl: 'https://disk.yandex.ru/d/6cjhBZYVz9YLWw/download',
+    zipName: 'vanna.zip',
+    contents: ["Полноценная 3D-модель STEP", "Полная деталировка", "Паспорт", "Руководство по эксплуатации"]
   }
 };
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
-;
 
 // Настройка Mail.ru транспорта
 const transporter = nodemailer.createTransport({

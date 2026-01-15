@@ -61,6 +61,16 @@ const PRODUCTS_DATA = {
         formats: ["CDW", "STP"],
         features: ["Габаритный чертеж", "Файл STEP", "Полная детализация", "Ульи с рамками"],
         paymentUrl: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=apidomik'
+    },
+    vanna: {
+        name: "Моечная ванна для технологической очистки оборудования",
+        description: "Стальная сварная емкость со столом и сливным краном",
+        image: "images/vanna.png",
+        model: "models/vanna.stl",
+        formatBadge: "STL",
+        formats: ["STP", "DOCX", "TXT"],
+        features: ["Полноценная 3D-модель STEP", "Полная деталировка", "Паспорт", "Руководство по эксплуатации"],
+        paymentUrl: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=vanna'
     }
 };
 
