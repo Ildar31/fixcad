@@ -183,7 +183,7 @@ class ProductManager:
         tk.Label(frame, text="Бейдж формата:", bg=self.frame_bg).grid(row=5, column=0, sticky=tk.W, padx=10, pady=5)
         self.format_var = tk.StringVar()
         self.format_combo = ttk.Combobox(frame, textvariable=self.format_var, 
-                                        values=["CDW", "SPW", "A3D", "M3D", "STL", "STEP", "TXT"])
+                                        values=["CDW", "SPW", "A3D", "M3D", "STL", "STEP", "TXT", "EXE"])
         self.format_combo.grid(row=5, column=1, sticky=tk.EW, padx=10, pady=5)
         self.format_combo.bind("<Button-3>", self.show_context_menu)
         

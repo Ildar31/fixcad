@@ -2,6 +2,16 @@
 
 // Данные товаров для генерации карточек и микроразметки
 const PRODUCTS_DATA = {
+    RalColorPro: {
+        name: "Утилита для раскраски моделей КОМПАС-3D по цветам RAL",
+        description: "Выделяйте объекты в модели, выбирайте цвет из палитры — и мгновенно применяйте его",
+        image: "images/RalColorPro.png",
+        model: null,
+        formatBadge: "EXE",
+        formats: ["EXE", "TXT"],
+        features: ["Все цвета стандарта RAL", "Точность цветопередачи", "Простота использования"],
+        paymentUrl: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=RalColorPro'
+    },
     stend: {
         name: "Стенд для сборки-разборки пакерно-якорного оборудования",
         description: "Полный комплект чертежей, 3D моделей и эксплуатационной документации",

@@ -12,6 +12,13 @@ app.use(require('cors')());
 // ВАШИ ССЫЛКИ С ЯНДЕКС.ДИСКА
 // ============================================
 const PRODUCTS = {
+  RalColorPro: {
+    name: 'Утилита для раскраски моделей КОМПАС-3D по цветам RAL',
+    description: 'Выделяйте объекты в модели, выбирайте цвет из палитры — и мгновенно применяйте его',
+    zipUrl: 'https://disk.yandex.ru/d/_MW2d8BDFnnJ-w/download',
+    zipName: 'RalColorPro.zip',
+    contents: ["Файл утилиты KompasRALColor Pro.exe", "Описание и лицензия Readme.txt"]
+  },
   stend: {
     name: 'Стенд для сборки-разборки пакерно-якорного оборудования',
     description: 'Полный комплект чертежей, 3D моделей и эксплуатационной документации',
