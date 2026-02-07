@@ -34,6 +34,9 @@ class ProductManager:
         self.products_data = {}
         self.server_products = {}
         
+        # Добавляем атрибут для отслеживания текущего товара
+        self.current_product_id = None
+        
         # Добавляем список для хранения удаленных товаров
         self.deleted_products = set()
         
@@ -122,12 +125,6 @@ class ProductManager:
         self.advanced_frame = tk.Frame(self.notebook, bg=self.frame_bg)
         self.notebook.add(self.advanced_frame, text="Дополнительно")
         self.create_advanced_tab()
-        
-        # Кнопка сохранения текущего товара
-        save_btn = tk.Button(right_frame, text="💾 Сохранить товар", 
-                           command=self.save_product,
-                           bg="#4CAF50", fg="white", padx=15, pady=5)
-        save_btn.pack(pady=10)
         
         self.status_var = tk.StringVar(value="Готов к работе")
         status_bar = tk.Label(self.root, textvariable=self.status_var,
@@ -396,6 +393,7 @@ class ProductManager:
             
             # Очищаем список удаленных товаров при загрузке
             self.deleted_products.clear()
+            self.current_product_id = None
             
             # Загружаем products.js с помощью eval
             with open(self.products_js_path, 'r', encoding='utf-8') as f:
@@ -430,13 +428,25 @@ class ProductManager:
             
             # Извлекаем объект PRODUCTS
             match = re.search(r'const PRODUCTS\s*=\s*({.*?});', content, re.DOTALL)
+            if not match:
+                # Попробуем найти без точки с запятой
+                match = re.search(r'const PRODUCTS\s*=\s*({.*?})\s*\n', content, re.DOTALL)
+            
             if match:
                 js_data = match.group(1)
                 print(f"🔍 Найден объект PRODUCTS ({len(js_data)} символов)")
                 
+                # Проверяем корректность структуры
+                brace_count = js_data.count('{') - js_data.count('}')
+                if brace_count != 0:
+                    print(f"⚠️  Внимание: несбалансированные скобки в PRODUCTS: {brace_count}")
+                
                 # Используем безопасный eval
                 self.server_products = self.safe_eval_js_object(js_data)
                 print(f"✅ Загружено {len(self.server_products)} товаров из server.js")
+            else:
+                print("❌ Не удалось найти объект PRODUCTS в server.js")
+                self.server_products = {}
             
             # Обновляем список
             self.update_products_list()
@@ -470,7 +480,7 @@ class ProductManager:
             strings.append(match.group(0))
             return f'__STRING_{len(strings)-1}__'
         
-        # Заменяем строкы в одинарных и двойных кавычках
+        # Заменяем строки в одинарных и двойных кавычках
         js_string = re.sub(r"'([^'\\]*(?:\\.[^'\\]*)*)'", replace_string, js_string)
         js_string = re.sub(r'"([^"\\]*(?:\\.[^"\\]*)*)"', replace_string, js_string)
         
@@ -698,6 +708,12 @@ class ProductManager:
             self.products_listbox.insert(tk.END, f"{product_id}: {name[:50]}...")
     
     def on_product_select(self, event):
+        """Обработчик выбора товара в списке"""
+        # Сохраняем изменения текущего товара перед переключением
+        was_saved = self.auto_save_current_product()
+        if was_saved:
+            print(f"💾 Изменения сохранены перед переключением")
+        
         selection = self.products_listbox.curselection()
         if not selection:
             return
@@ -705,9 +721,140 @@ class ProductManager:
         product_id = self.products_listbox.get(selection[0]).split(":")[0].strip()
         self.load_product_data(product_id)
     
+    def auto_save_current_product(self):
+        """Автоматически сохраняет текущий товар если он редактировался"""
+        current_id_in_field = self.product_id_var.get().strip()
+        
+        # Если нет ID товара в поле
+        if not current_id_in_field:
+            return False
+        
+        # Используем current_product_id как старый ID (тот, что был загружен)
+        old_id = self.current_product_id
+        
+        # Если ID в поле изменился относительно загруженного
+        if old_id and old_id != current_id_in_field:
+            # Проверяем, не занят ли новый ID другим товаром
+            if current_id_in_field in self.products_data and current_id_in_field != old_id:
+                print(f"⚠️  ID '{current_id_in_field}' уже используется другим товаром, автосохранение отменено")
+                # Восстанавливаем старый ID в поле
+                self.product_id_var.set(old_id)
+                return False
+            
+            # Разрешаем изменение ID - это будет переименование товара
+            print(f"🔄 Обнаружено изменение ID: '{old_id}' → '{current_id_in_field}'")
+        
+        # Получаем данные из полей интерфейса
+        model_value = self.model_var.get().strip()
+        if not model_value:
+            model_value = None
+        
+        # Получаем текущую ссылку на оплату
+        current_payment_url = self.payment_url_var.get().strip()
+        
+        # Автоматически обновляем ссылку на оплату при изменении ID
+        if old_id and old_id != current_id_in_field and current_payment_url:
+            # Если ссылка содержит старый label, обновляем его
+            if f"label={old_id}" in current_payment_url:
+                current_payment_url = current_payment_url.replace(f"label={old_id}", f"label={current_id_in_field}")
+                # Обновляем поле в интерфейсе
+                self.payment_url_var.set(current_payment_url)
+                print(f"🔗 Автообновление ссылки на оплату с новым label: {current_id_in_field}")
+        
+        # Подготавливаем новые данные из интерфейса
+        new_products_data = {
+            'name': self.name_var.get().strip(),
+            'description': self.desc_text.get(1.0, tk.END).strip(),
+            'image': self.image_var.get().strip(),
+            'model': model_value,
+            'formatBadge': self.format_var.get().strip(),
+            'formats': [f.strip() for f in self.formats_var.get().split(',') if f.strip()],
+            'features': [f.strip() for f in self.features_text.get(1.0, tk.END).strip().split('\n') if f.strip()],
+            'paymentUrl': current_payment_url
+        }
+        
+        new_server_data = {
+            'name': self.name_var.get().strip(),
+            'description': self.desc_text.get(1.0, tk.END).strip(),
+            'zipUrl': self.zip_url_var.get().strip(),
+            'zipName': self.zip_name_var.get().strip(),
+            'contents': [c.strip() for c in self.contents_text.get(1.0, tk.END).strip().split('\n') if c.strip()]
+        }
+        
+        # Проверяем, есть ли изменения (сравниваем с сохраненными данными)
+        has_changes = False
+        
+        # Определяем, с какими данными сравнивать
+        compare_id = old_id if old_id and old_id in self.products_data else current_id_in_field
+        
+        if compare_id in self.products_data:
+            current_products_data = self.products_data[compare_id]
+            
+            # Сравниваем каждое поле (кроме ID, который мы уже обработали)
+            for key, new_value in new_products_data.items():
+                current_value = current_products_data.get(key)
+                
+                # Особое сравнение для списков
+                if isinstance(new_value, list) and isinstance(current_value, list):
+                    if sorted(new_value) != sorted(current_value):
+                        has_changes = True
+                        break
+                elif new_value != current_value:
+                    has_changes = True
+                    break
+        
+        # Проверяем изменения в server данных
+        if not has_changes and compare_id in self.server_products:
+            current_server_data = self.server_products[compare_id]
+            
+            for key, new_value in new_server_data.items():
+                current_value = current_server_data.get(key)
+                
+                if isinstance(new_value, list) and isinstance(current_value, list):
+                    if sorted(new_value) != sorted(current_value):
+                        has_changes = True
+                        break
+                elif new_value != current_value:
+                    has_changes = True
+                    break
+        
+        # Если ID изменился - это всегда изменения
+        if old_id and old_id != current_id_in_field:
+            has_changes = True
+        
+        if has_changes:
+            # Если ID изменился, переносим данные
+            if old_id and old_id != current_id_in_field:
+                if old_id in self.products_data:
+                    del self.products_data[old_id]
+                if old_id in self.server_products:
+                    del self.server_products[old_id]
+                if old_id in self.deleted_products:
+                    self.deleted_products.remove(old_id)
+                
+                print(f"🔄 Автосохранение: изменен ID товара '{old_id}' → '{current_id_in_field}'")
+            
+            # Сохраняем изменения под новым ID
+            self.products_data[current_id_in_field] = new_products_data
+            self.server_products[current_id_in_field] = new_server_data
+            
+            # Обновляем current_product_id
+            self.current_product_id = current_id_in_field
+            
+            # Обновляем список товаров
+            self.update_products_list()
+            
+            print(f"💾 Автосохранение товара '{current_id_in_field}'")
+            return True
+        
+        return False
+    
     def load_product_data(self, product_id):
         """Загружает данные выбранного товара"""
         print(f"\n📥 Загружаем данные товара: {product_id}")
+        
+        # Сохраняем текущий ID (тот, что выбран в списке)
+        self.current_product_id = product_id
         
         if product_id in self.products_data:
             product = self.products_data[product_id]
@@ -728,7 +875,16 @@ class ProductManager:
             for key, value in server_product.items():
                 print(f"  {key}: {value}")
             
-            # Основные параметры
+            # Получаем ссылку на оплату
+            payment_url = product.get('paymentUrl', '')
+            
+            # Если ссылка на оплату пустая или не содержит правильного label, генерируем новую
+            if not payment_url or f"label={product_id}" not in payment_url:
+                payment_url = f"https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label={product_id}"
+                # Обновляем в данных
+                product['paymentUrl'] = payment_url
+            
+            # Загружаем данные
             self.product_id_var.set(product_id)
             self.name_var.set(product.get('name', ''))
             self.desc_text.delete(1.0, tk.END)
@@ -743,12 +899,12 @@ class ProductManager:
             
             self.format_var.set(product.get('formatBadge', ''))
             
-            # Файлы и ссылки
+            # Файлы и ссылки (только из server_products)
             self.zip_url_var.set(server_product.get('zipUrl', ''))
             self.zip_name_var.set(server_product.get('zipName', ''))
             
             # Ссылка на оплату и форматы
-            self.payment_url_var.set(product.get('paymentUrl', ''))
+            self.payment_url_var.set(payment_url)
             
             # Форматы
             formats = product.get('formats', [])
@@ -770,7 +926,7 @@ class ProductManager:
             elif features:
                 self.features_text.insert(1.0, str(features))
             
-            # Содержимое архива
+            # Содержимое архива (только из server_products)
             self.contents_text.delete(1.0, tk.END)
             contents = server_product.get('contents', [])
             if isinstance(contents, list):
@@ -784,15 +940,37 @@ class ProductManager:
                 self.contents_text.insert(1.0, str(contents))
             
             print(f"✅ Данные товара {product_id} загружены в интерфейс")
-
+        else:
+            # Если товар не найден, очищаем поля
+            print(f"⚠️ Товар {product_id} не найден в данных")
+            self.clear_product_fields()
+            self.current_product_id = None
+    
+    def clear_product_fields(self):
+        """Очищает все поля редактирования товара"""
+        self.product_id_var.set("")
+        self.name_var.set("")
+        self.desc_text.delete(1.0, tk.END)
+        self.image_var.set("")
+        self.model_var.set("")
+        self.format_var.set("")
+        self.zip_url_var.set("")
+        self.zip_name_var.set("")
+        self.payment_url_var.set("")
+        self.formats_var.set("")
+        self.features_text.delete(1.0, tk.END)
+        self.contents_text.delete(1.0, tk.END)
+    
     def save_product(self):
         """Сохраняет текущий товар (без записи в файлы)"""
-        product_id = self.product_id_var.get().strip()
-        if not product_id:
+        old_id = self.current_product_id  # Запоминаем старый ID (из загруженных данных)
+        new_id = self.product_id_var.get().strip()
+        
+        if not new_id:
             messagebox.showwarning("Внимание", "Введите ID товара!")
             return
             
-        if not re.match(r'^[a-zA-Z0-9_]+$', product_id):
+        if not re.match(r'^[a-zA-Z0-9_]+$', new_id):
             messagebox.showwarning("Внимание", "ID должен содержать только латинские буквы, цифры и подчеркивания!")
             return
         
@@ -800,21 +978,35 @@ class ProductManager:
         model_value = self.model_var.get().strip()
         if not model_value:
             model_value = None
+        
+        # Получаем текущую ссылку на оплату из поля
+        current_payment_url = self.payment_url_var.get().strip()
+        
+        # Если ссылка на оплату пустая или не содержит правильного label, генерируем новую
+        if not current_payment_url or f"label={old_id if old_id else new_id}" not in current_payment_url:
+            # Формируем новую ссылку на оплату с новым ID
+            payment_url = f"https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label={new_id}"
+        else:
+            # Обновляем label в существующей ссылке, если ID изменился
+            if old_id and old_id != new_id:
+                # Заменяем старый label на новый в ссылке
+                payment_url = current_payment_url.replace(f"label={old_id}", f"label={new_id}")
+            else:
+                payment_url = current_payment_url
             
-        # Обновляем products.js данные
-        self.products_data[product_id] = {
+        # Подготавливаем данные
+        products_data = {
             'name': self.name_var.get().strip(),
             'description': self.desc_text.get(1.0, tk.END).strip(),
             'image': self.image_var.get().strip(),
-            'model': model_value,  # Здесь будет None или путь к модели
+            'model': model_value,
             'formatBadge': self.format_var.get().strip(),
             'formats': [f.strip() for f in self.formats_var.get().split(',') if f.strip()],
             'features': [f.strip() for f in self.features_text.get(1.0, tk.END).strip().split('\n') if f.strip()],
-            'paymentUrl': self.payment_url_var.get().strip()
+            'paymentUrl': payment_url
         }
         
-        # Обновляем server.js данные
-        self.server_products[product_id] = {
+        server_data = {
             'name': self.name_var.get().strip(),
             'description': self.desc_text.get(1.0, tk.END).strip(),
             'zipUrl': self.zip_url_var.get().strip(),
@@ -822,56 +1014,110 @@ class ProductManager:
             'contents': [c.strip() for c in self.contents_text.get(1.0, tk.END).strip().split('\n') if c.strip()]
         }
         
+        # Если ID изменился
+        if old_id and old_id != new_id:
+            # Проверяем, не занят ли новый ID
+            if new_id in self.products_data and new_id != old_id:
+                messagebox.showwarning("Внимание", f"ID '{new_id}' уже используется другим товаром!")
+                # Восстанавливаем старый ID в поле
+                self.product_id_var.set(old_id)
+                return
+            
+            # Переносим данные со старого ID на новый
+            if old_id in self.products_data:
+                del self.products_data[old_id]
+            if old_id in self.server_products:
+                del self.server_products[old_id]
+            
+            # Удаляем старый ID из списка удаленных, если он там был
+            if old_id in self.deleted_products:
+                self.deleted_products.remove(old_id)
+            
+            print(f"🔄 Изменен ID товара: '{old_id}' → '{new_id}'")
+        
+        # Сохраняем данные
+        self.products_data[new_id] = products_data
+        self.server_products[new_id] = server_data
+        
+        # Обновляем поле ссылки на оплату в интерфейсе
+        self.payment_url_var.set(payment_url)
+        
+        # Сохраняем текущий ID
+        self.current_product_id = new_id
+        
+        # Обновляем список товаров
         self.update_products_list()
-        self.status_var.set(f"Товар '{product_id}' сохранен в памяти")
         
         # Находим и выделяем сохраненный товар в списке
         for i in range(self.products_listbox.size()):
-            if self.products_listbox.get(i).startswith(product_id + ":"):
+            if self.products_listbox.get(i).startswith(new_id + ":"):
                 self.products_listbox.selection_clear(0, tk.END)
                 self.products_listbox.selection_set(i)
                 self.products_listbox.see(i)
                 break
+        
+        self.status_var.set(f"Товар '{new_id}' сохранен")
+        print(f"💾 Товар сохранен: '{new_id}'")
     
     def add_product(self):
-        # Сбрасываем поля
-        self.product_id_var.set("")
-        self.name_var.set("")
-        self.desc_text.delete(1.0, tk.END)
-        self.image_var.set("")
-        self.model_var.set("")
-        self.format_var.set("CDW")
-        self.zip_url_var.set("")
-        self.zip_name_var.set("")
-        self.payment_url_var.set("")
-        self.formats_var.set("")
-        self.features_text.delete(1.0, tk.END)
-        self.contents_text.delete(1.0, tk.END)
+        # Сначала сохраняем текущий товар если он редактировался
+        was_saved = self.auto_save_current_product()
+        if was_saved:
+            print(f"💾 Изменения сохранены перед созданием нового товара")
         
+        # Создаем новый ID для товара
         base_id = "new_product"
         counter = 1
         while f"{base_id}_{counter}" in self.products_data:
             counter += 1
         new_id = f"{base_id}_{counter}"
-        self.product_id_var.set(new_id)
         
-        # Заполняем значения по умолчанию для нового товара
-        self.name_var.set(f"Новый товар {counter}")
-        self.desc_text.insert(1.0, "Описание нового товара")
-        self.image_var.set("images/default.jpg")
-        self.zip_url_var.set("https://disk.yandex.ru/d/...")
-        self.zip_name_var.set(f"product_{counter}.zip")
-        self.payment_url_var.set("https://yoomoney.ru/...")
-        self.formats_var.set("CDW, PDF, DWG")
+        # Сохраняем текущий ID
+        self.current_product_id = new_id
         
-        # Сохраняем новый товар в памяти
-        self.save_product()
+        # Формируем ссылку на оплату с ID товара
+        payment_url = f"https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label={new_id}"
+        
+        # Создаем пустую запись в данных
+        self.products_data[new_id] = {
+            'name': f"Новый товар {counter}",
+            'description': "Описание нового товара",
+            'image': "images/default.jpg",
+            'model': None,
+            'formatBadge': "CDW",
+            'formats': ["CDW", "PDF", "DWG"],
+            'features': ["Особенность 1", "Особенность 2"],
+            'paymentUrl': payment_url
+        }
+        
+        self.server_products[new_id] = {
+            'name': f"Новый товар {counter}",
+            'description': "Описание нового товара",
+            'zipUrl': "https://disk.yandex.ru/d/...",
+            'zipName': f"product_{counter}.zip",
+            'contents': ["Содержимое 1", "Содержимое 2"]
+        }
+        
+        # Загружаем данные нового товара в интерфейс
+        self.load_product_data(new_id)
+        
+        # Обновляем список товаров
+        self.update_products_list()
+        
+        # Выделяем новый товар в списке
+        for i in range(self.products_listbox.size()):
+            if self.products_listbox.get(i).startswith(new_id + ":"):
+                self.products_listbox.selection_clear(0, tk.END)
+                self.products_listbox.selection_set(i)
+                self.products_listbox.see(i)
+                break
         
         # Фокусируемся на поле названия
         self.name_entry.focus()
         self.name_entry.select_range(0, tk.END)
         
         self.status_var.set(f"Создан новый товар: {new_id}")
+        print(f"➕ Создан новый товар: {new_id}")
     
     def duplicate_product(self):
         selection = self.products_listbox.curselection()
@@ -880,6 +1126,11 @@ class ProductManager:
             return
             
         old_id = self.products_listbox.get(selection[0]).split(":")[0].strip()
+        
+        # Сначала сохраняем текущий товар если он редактировался
+        was_saved = self.auto_save_current_product()
+        if was_saved:
+            print(f"💾 Изменения сохранены перед дублированием")
         
         base_id = old_id + "_copy"
         counter = 1
@@ -920,22 +1171,15 @@ class ProductManager:
             if product_id in self.server_products:
                 del self.server_products[product_id]
             
+            # Если удаляем текущий товар, сбрасываем current_product_id
+            if product_id == self.current_product_id:
+                self.current_product_id = None
+            
             # Обновляем список
             self.update_products_list()
             
             # Очищаем поля редактирования
-            self.product_id_var.set("")
-            self.name_var.set("")
-            self.desc_text.delete(1.0, tk.END)
-            self.image_var.set("")
-            self.model_var.set("")
-            self.format_var.set("")
-            self.zip_url_var.set("")
-            self.zip_name_var.set("")
-            self.payment_url_var.set("")
-            self.formats_var.set("")
-            self.features_text.delete(1.0, tk.END)
-            self.contents_text.delete(1.0, tk.END)
+            self.clear_product_fields()
             
             self.status_var.set(f"Товар '{product_id}' помечен на удаление")
     
@@ -946,6 +1190,11 @@ class ProductManager:
             
         idx = selection[0]
         product_id = self.products_listbox.get(idx).split(":")[0].strip()
+        
+        # Сначала сохраняем текущий товар если он редактировался
+        was_saved = self.auto_save_current_product()
+        if was_saved:
+            print(f"💾 Изменения сохранены перед перемещением вверх")
         
         product_ids = list(self.products_data.keys())
         if product_id in product_ids:
@@ -976,6 +1225,11 @@ class ProductManager:
             
         idx = selection[0]
         product_id = self.products_listbox.get(idx).split(":")[0].strip()
+        
+        # Сначала сохраняем текущий товар если он редактировался
+        was_saved = self.auto_save_current_product()
+        if was_saved:
+            print(f"💾 Изменения сохранены перед перемещением вниз")
         
         product_ids = list(self.products_data.keys())
         if product_id in product_ids:
@@ -1190,30 +1444,56 @@ document.addEventListener('DOMContentLoaded', function() {
         with open(self.server_js_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
+        # Ищем начало объекта PRODUCTS
         start_match = re.search(r'const PRODUCTS\s*=\s*\{', content)
         if not start_match:
             messagebox.showerror("Ошибка", "Не найден объект PRODUCTS в server.js")
             return
         
         start_idx = start_match.start()
-        text_after_start = content[start_idx:]
         
+        # Находим конец объекта PRODUCTS с учетом вложенных объектов
         brace_count = 0
-        end_idx = 0
+        in_string = False
+        string_char = None
+        end_idx = start_idx
         
-        for i, char in enumerate(text_after_start):
-            if char == '{':
-                brace_count += 1
-            elif char == '}':
-                brace_count -= 1
-                if brace_count == 0:
-                    end_idx = start_idx + i + 1
-                    break
+        # Проходим от начала объекта до конца файла
+        for i in range(start_idx, len(content)):
+            char = content[i]
+            
+            # Учитываем строковые литералы
+            if char in ['"', "'"] and (i == 0 or content[i-1] != '\\'):
+                if not in_string:
+                    in_string = True
+                    string_char = char
+                elif char == string_char:
+                    in_string = False
+                    string_char = None
+            
+            # Считаем фигурные скобки только вне строк
+            if not in_string:
+                if char == '{':
+                    brace_count += 1
+                elif char == '}':
+                    brace_count -= 1
+                    if brace_count == 0:
+                        # Нашли закрывающую скобку объекта PRODUCTS
+                        # Ищем точку с запятой после скобки
+                        j = i + 1
+                        while j < len(content) and content[j].isspace():
+                            j += 1
+                        if j < len(content) and content[j] == ';':
+                            end_idx = j + 1
+                        else:
+                            end_idx = i + 1
+                        break
         
-        if end_idx == 0:
+        if brace_count != 0:
             messagebox.showerror("Ошибка", "Не удалось найти конец объекта PRODUCTS")
             return
         
+        # Генерируем новый объект PRODUCTS
         new_products = "const PRODUCTS = {\n"
         
         for i, (product_id, product) in enumerate(server_products.items()):
@@ -1228,9 +1508,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 new_products += ","
             new_products += "\n"
         
-        new_products += "};\n"
+        new_products += "};\n\n"
         
-        new_content = content[:start_idx] + new_products + content[end_idx:]
+        # Проверяем, есть ли комментарий или другой код после объекта PRODUCTS
+        next_char_idx = end_idx
+        while next_char_idx < len(content) and content[next_char_idx].isspace():
+            next_char_idx += 1
+        
+        # Если после объекта есть код (например, комментарий), сохраняем его
+        if next_char_idx < len(content):
+            new_content = content[:start_idx] + new_products + content[next_char_idx:]
+        else:
+            new_content = content[:start_idx] + new_products
+        
+        # Удаляем возможные дублирующиеся пустые строки и точки с запятой
+        new_content = re.sub(r';\s*;+', ';', new_content)  # Удаляем множественные ;
+        new_content = re.sub(r'\n\s*\n\s*\n+', '\n\n', new_content)  # Удаляем множественные пустые строки
         
         with open(self.server_js_path, 'w', encoding='utf-8') as f:
             f.write(new_content)
@@ -1239,46 +1532,192 @@ document.addEventListener('DOMContentLoaded', function() {
     def show_instructions(self):
         instructions = """
 ═══════════════════════════════════════════════════════════════
-                    ИНСТРУКЦИЯ ПО ИСПОЛЬЗОВАНИЮ
+            	  ИНСТРУКЦИЯ ПО ИСПОЛЬЗОВАНИЮ
 ═══════════════════════════════════════════════════════════════
 
-1. 📦 ЗАГРУЗКА ДАННЫХ
-   • Нажмите "🔄 Обновить данные"
-   • Программа использует улучшенный парсинг JS объектов
+1. 📋 ОБЩИЕ ВОЗМОЖНОСТИ
 
-2. ➕ ДОБАВЛЕНИЕ ТОВАРА
-   • Нажмите "➕ Добавить товар"
-   • Автоматически создается товар с заполненными полями по умолчанию
-   • Отредактируйте поля и сохраните
+• Контекстное меню (правый клик в любом поле):
+  - Копировать (Ctrl+C) - копирует выделенный текст
+  - Вставить (Ctrl+V) - вставляет текст из буфера обмена  
+  - Вырезать (Ctrl+X) - вырезает выделенный текст
+  - Работает во ВСЕХ полях ввода и текстовых областях
 
-3. ✏️ РЕДАКТИРОВАНИЕ ТОВАРА
-   • Основные: название, описание, изображение, 3D модель
-   • Файлы: ВСЕ ссылки и форматы файлов
-   • Дополнительно: особенности и содержимое архива
+• Автосохранение: при переключении между товарами текущий 
+  товар автоматически сохраняется
 
-4. 📋 КОНТЕКСТНОЕ МЕНЮ
-   • Правый клик в любом поле редактирования:
-     - Копировать (Ctrl+C)
-     - Вставить (Ctrl+V) 
-     - Вырезать (Ctrl+X)
-   • Работает со ВСЕМИ полями, включая "Особенности" и "Содержимое"
+• Валидация: проверка корректности вводимых данных
 
-5. 🔄 УПРАВЛЕНИЕ СПИСКОМ
-   • ⬆️/⬇️ - переместить товар вверх/вниз
-   • 📋 - создать копию товара
-   • 🗑️ - удалить товар (нужно сохранить изменения)
+2. 🎯 ВЕРХНЯЯ ПАНЕЛЬ КНОПОК
 
-6. 💾 СОХРАНЕНИЕ
-   • "💾 Сохранить товар" - сохраняет изменения текущего товара
-   • "💾 Сохранить все" - сохраняет ВСЕ изменения в файлы
-   • Автоматически создаются резервные копии
-   • Удаленные товары не сохраняются в файлы
+🔄 "Обновить данные"
+   - Перезагружает данные с сайта
+   - Обновляет список товаров
+   - Используйте после ручного редактирования сайта
 
-⚠️ ВАЖНО: Удаленные товары окончательно удаляются только после
-сохранения всех изменений ("💾 Сохранить все")
+➕ "Добавить товар"
+   - Создает новый товар с заполненными полями по умолчанию
+   - Автоматически генерирует ID вида "new_product_1"
+   - Создает новую ссылку на оплату с правильным label
+
+💾 "Сохранить все"
+   - Сохраняет ВСЕ изменения во ВСЕ файлы
+   - Создает резервные копии файлов
+   - Товары, удаленные из списка, будут удалены с сайта
+
+📋 "Инструкция"
+   - Показывает эту инструкцию
+
+3. 📦 ЛЕВАЯ ПАНЕЛЬ - СПИСОК ТОВАРОВ
+
+• Список всех товаров в формате: "ID: Название..."
+• Выбор товара: клик по строке загружает данные в правую панель
+
+Кнопки управления списком:
+
+⬆️ "Вверх" - перемещает выбранный товар на одну позицию вверх
+⬇️ "Вниз" - перемещает выбранный товар на одну позицию вниз  
+📋 "Дублировать" - создает копию выбранного товара с суффиксом "_copy"
+🗑️ "Удалить" - удаляет товар из списка (удалится с сайта после сохранения)
+
+4. ✏️ ПРАВАЯ ПАНЕЛЬ - РЕДАКТИРОВАНИЕ ТОВАРА
+
+───────────────────────────────────────────────────────────────
+ВКЛАДКА "ОСНОВНЫЕ"
+───────────────────────────────────────────────────────────────
+
+• ID товара:
+  - Уникальный идентификатор товара
+  - Только латинские буквы, цифры и подчеркивания
+  - При изменении ID автоматически обновляется ссылка на оплату
+  - Примеры: "valve_01", "pump_industrial"
+
+• Название:
+  - Отображается на сайте как заголовок товара
+  - Рекомендуется 3-7 слов
+
+• Описание:
+  - Подробное описание товара
+  - Отображается на сайте под названием
+  - Многострочное поле с переносом слов
+
+• Изображение:
+  - Путь к файлу изображения товара
+  - Форматы: PNG, JPG, JPEG, GIF
+  - Кнопка "📁" открывает диалог выбора файла
+  - Автоматически копирует файл в папку "images/"
+
+• 3D модель:
+  - Путь к файлу 3D модели (STL формат)
+  - Кнопка "📁" открывает диалог выбора файла
+  - Кнопка "❌" очищает поле (удаляет 3D модель)
+  - Автоматически копирует файл в папку "models/"
+  - Если поле пустое - товар будет без 3D просмотра
+
+• Бейдж формата:
+  - Выпадающий список с форматами
+  - Отображается как цветной бейдж на изображении товара
+  - Варианты: CDW, SPW, A3D, M3D, STL, STEP, TXT
+
+───────────────────────────────────────────────────────────────
+ВКЛАДКА "ФАЙЛЫ"
+───────────────────────────────────────────────────────────────
+
+• Ссылка на Яндекс.Диск:
+  - Прямая ссылка на скачивание архива с файлами
+  - Формат: https://disk.yandex.ru/d/...
+  - Используется сервером для предоставления доступа
+
+• Имя архива:
+  - Имя ZIP-архива, которое увидит пользователь
+  - Пример: "valve_technical_drawings.zip"
+  - Автоматически подставляется в ссылку скачивания
+
+• Ссылка на оплату (ЮMoney):
+  - Ссылка на оплату через ЮMoney
+  - Автоматически генерируется при создании товара
+  - Содержит ID товара в параметре "label"
+  - Формат: https://yoomoney.ru/quickpay/confirm?receiver=...&label=ID_товара
+
+• Форматы файлов:
+  - Список форматов, доступных в архиве
+  - Перечисляются через запятую
+  - Пример: "CDW, PDF, DWG, STEP"
+  - Отображаются как теги под описанием товара
+
+───────────────────────────────────────────────────────────────
+ВКЛАДКА "ДОПОЛНИТЕЛЬНО"
+───────────────────────────────────────────────────────────────
+
+• Особенности товара:
+  - Список ключевых особенностей товара
+  - Каждая особенность на новой строке
+  - Отображаются как маркированный список на сайте
+  - Пример:
+    Высокая точность
+    Коррозионная стойкость
+    Простота установки
+
+• Содержимое архива:
+  - Подробное описание того, что находится в архиве
+  - Каждый пункт на новой строке
+  - Пример:
+    Чертежи в формате CDW
+    3D модель в формате STEP
+    Техническая документация PDF
+    Инструкция по монтажу
+
+• Кнопка "🔄 Сгенерировать содержимое":
+  - Автоматически копирует текст из "Особенности товара"
+    в "Содержимое архива"
+  - Полезно для быстрого заполнения
+
+5. 💾 СИСТЕМА СОХРАНЕНИЯ
+
+• Автосохранение в оперативной памяти при:
+  - Переключении между товарами
+  - Перемещении товаров в списке
+  - Дублировании товаров
+
+• Ручное сохранение:
+  - "💾 Сохранить все" - полное сохранение
+  - Создает резервные копии с timestamp
+  - Форматы имен: products.js.backup_20241215_143022
+
+• Файлы:
+  - products.js - данные для отображения на сайте
+  - server.js - данные для серверной части (скачивание)
+
+6. ⚠️ ВАЖНЫЕ ЗАМЕЧАНИЯ
+
+• Перед закрытием программы для внесения изменений на сайт нажимайте "💾 Сохранить все"
+
+• Удаленные товары окончательно удаляются только после сохранения
+
+• При изменении ID товара автоматически обновляется ссылка на оплату
+
+• Для работы 3D просмотра нужны файлы STL в папке "models/"
+
+• Изображения должны быть в папке "images/"
+
+• Ссылки на Яндекс.Диск должны быть прямыми (не через публичный доступ)
+
+7. 🛠️ ТЕХНИЧЕСКАЯ ИНФОРМАЦИЯ
+
+• Форматы данных:
+  - products.js: отображение, микроразметка, оплата
+  - server.js: скачивание файлов
+
+• Структура папок:
+  /images/ - изображения товаров
+  /models/ - 3D модели (STL)
+  products.js - основной файл данных
+  server.js - серверный файл данных
+
+• Логирование: все действия логируются в консоль
 
 ═══════════════════════════════════════════════════════════════
-        Для вопросов: irashitov79@mail.ru | FIXCAD MARKET
+                        УДАЧНОЙ РАБОТЫ!
 ═══════════════════════════════════════════════════════════════
         """
         
