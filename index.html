@@ -996,8 +996,8 @@
             <img src="images/logo.png" alt="FIXCAD MARKET логотип" style="height: 72px; vertical-align: middle;">
             FIXCAD MARKET — чертежи и 3D-модели Компас&reg;
         </h1>
-        <button class="price-badge" onclick="showCommissionModal()" aria-label="Все товары по 100 рублей">
-            ВСЕ товары по 100 рублей!
+        <button class="price-badge" onclick="showCommissionModal()" aria-label="Все файлы по 100 рублей">
+            ВСЕ файлы по 100 рублей!
         </button>
         <p>Качественные файлы для конструкторов и проектировщиков</p>
     </div>
@@ -1398,9 +1398,9 @@
         // Переменные для управления состоянием
         let currentProduct = null;
 
-        // Делегирование событий для кнопок "Купить" и изображений товаров
+        // Делегирование событий для кнопок "Скачать" и изображений товаров
         document.addEventListener('click', function(e) {
-            // Обработка кнопок "Купить"
+            // Обработка кнопок "Скачать"
             if (e.target.matches('.buy-button')) {
                 e.preventDefault();
                 currentProduct = e.target.getAttribute('data-product');
