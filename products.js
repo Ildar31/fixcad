@@ -12,6 +12,16 @@ const PRODUCTS_DATA = {
         features: ["Все цвета стандарта RAL", "Точность цветопередачи", "Простота использования"],
         paymentUrl: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=RalColorPro'
     },
+    KompasAutoDraw: {
+        name: "Утилита для создания чертежей из моделей КОМПАС-3D",
+        description: "Автогенерация комплекта КД из 3D сборки КОМПАС одним нажатием кнопки",
+        image: "images/KompasAutoDraw.png",
+        model: null,
+        formatBadge: "EXE",
+        formats: ["EXE", "TXT"],
+        features: ["Автоподбор формата и масштаба", "Автопростановка размеров", "Версия КОМПАС-3D 19+"],
+        paymentUrl: 'https://yoomoney.ru/quickpay/confirm?receiver=4100119389739602&quickpay-form=button&paymentType=AC&sum=100&label=KompasAutoDraw'
+    },
     stend: {
         name: "Стенд для сборки-разборки пакерно-якорного оборудования",
         description: "Полный комплект чертежей, 3D моделей и эксплуатационной документации",
@@ -109,8 +119,8 @@ function generateProductsHTML() {
             <ul class="product-features">
                 ${product.features.map(feature => `<li>${feature}</li>`).join('')}
             </ul>
-            <button class="buy-button" data-product="${productId}" aria-label="Скачать ${product.name} за 100 рублей">
-                Скачать за 100 руб.
+            <button class="buy-button" data-product="${productId}" aria-label="Купить ${product.name} за 100 рублей">
+                Купить за 100 руб.
             </button>
         </div>
         `;

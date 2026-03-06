@@ -19,6 +19,13 @@ const PRODUCTS = {
     zipName: 'RalColorPro.zip',
     contents: ["Файл утилиты KompasRALColor Pro.exe", "Описание и лицензия Readme.txt"]
   },
+  KompasAutoDraw: {
+    name: 'Утилита для создания чертежей из моделей КОМПАС-3D',
+    description: 'Автогенерация комплекта КД из 3D сборки КОМПАС одним нажатием кнопки',
+    zipUrl: 'https://disk.yandex.ru/d/oi_IeCAPZ0ukdg/download',
+    zipName: 'KompasAutoDraw.zip',
+    contents: ["Файл утилиты KompasAutoDraw.exe", "Описание Readme.txt"]
+  },
   stend: {
     name: 'Стенд для сборки-разборки пакерно-якорного оборудования',
     description: 'Полный комплект чертежей, 3D моделей и эксплуатационной документации',
