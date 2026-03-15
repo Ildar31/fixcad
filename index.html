@@ -1871,9 +1871,12 @@
         });
 
         // Добавляем обработчик для баннеров разработки
-        document.querySelector('.dev-banner').addEventListener('click', function() {
-            this.style.display = 'none';
-        });
+        const devBanner = document.querySelector('.dev-banner');
+        if (devBanner) {
+            devBanner.addEventListener('click', function() {
+                this.style.display = 'none';
+            });
+        }
 
         // Плавная прокрутка для якорей
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
