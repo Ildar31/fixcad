@@ -119,8 +119,8 @@ function generateProductsHTML() {
             <ul class="product-features">
                 ${product.features.map(feature => `<li>${feature}</li>`).join('')}
             </ul>
-            <button class="buy-button" data-product="${productId}" aria-label="Купить ${product.name} за 100 рублей">
-                Купить за 100 руб.
+            <button class="buy-button" data-product="${productId}" aria-label="Скачать ${product.name} за 100 рублей">
+                Скачать за 100 руб.
             </button>
         </div>
         `;
